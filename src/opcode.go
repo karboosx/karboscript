@@ -30,9 +30,12 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 		if statement.Expression != nil {
 			parseExpresion(stack, statement.Expression)
 		}
+		if statement.ReturnStmt != nil {
+			parseReturnStmt(stack, statement.ReturnStmt)
+		}
 	}
 
-	*stack = append(*stack, &Opcode{"function_return", []any{""}, nil})
+	*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
 	return nil
 }
 
@@ -42,7 +45,12 @@ func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {
 		parseExpresion(stack, argument)
 		*stack = append(*stack, &Opcode{"push_function_arg", []any{"expresion_output"}, nil})
 	}
-	*stack = append(*stack, &Opcode{"call_function", []any{functionCall.FunctionName}, nil})
+	*stack = append(*stack, &Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
+}
+
+func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
+	parseExpresion(stack, &returnStmt.Expression)
+	*stack = append(*stack, &Opcode{"function_return", []any{""}, nil})
 }
 
 func parseExpresion(stack *[]*Opcode, expression *Expression) {
@@ -57,7 +65,7 @@ func parseExpresion(stack *[]*Opcode, expression *Expression) {
 	}
 	if expression.FunctionCall != nil {
 		parseFunctionCall(stack, expression.FunctionCall)
-		*stack = append(*stack, &Opcode{"set_expresion_output", []any{"function_output"}, nil})
+		//*stack = append(*stack, &Opcode{"set_expresion_output", []any{"expresion_output"}, nil})
 	}
 }
 

@@ -36,7 +36,7 @@ func main() {
 		ctx.FatalIfErrorf(err)
 	}
 
-	opcodes = append(opcodes, &Opcode{"exit", []any{""}, nil}, &Opcode{"call_function", []any{"main"}, nil})
+	opcodes = append(opcodes, &Opcode{"call_function", []any{"main", 0}, nil})
 
 	if cli.Opcode {
 		var str string

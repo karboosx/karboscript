@@ -11,6 +11,9 @@ var buildInFunctions = map[string]buildInFunction{
 }
 
 func out(program *Program) error {
-	fmt.Print(*program.expresionOutout)
+
+	arguments := getFunctionArguments(program)
+	fmt.Println(arguments...)
+
 	return nil
 }

@@ -3,12 +3,13 @@ package main
 import "errors"
 
 type Program struct {
-	Opcodes           []*Opcode
-	codePointer       *int
-	running           *bool
-	callstack         []int
-	functionArgsStack []any
-	expresionOutout   *any
+	Opcodes               []*Opcode
+	codePointer           *int
+	running               *bool
+	callstack             []int
+	functionArgsStack     []any
+	expresionOutput       *any
+	functionArgumentCount *int
 }
 
 func execute(stack *[]*Opcode) {
@@ -16,9 +17,10 @@ func execute(stack *[]*Opcode) {
 	codePointer := len(*stack) - 1
 	running := true
 	callstack := []int{}
+	functionArgumentCount := 0
 
 	program := Program{
-		*stack, &codePointer, &running, callstack, []any{}, nil,
+		*stack, &codePointer, &running, callstack, []any{}, nil, &functionArgumentCount,
 	}
 
 	for *program.running {
@@ -58,19 +60,30 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "set_expresion_output" {
-		program.expresionOutout = &opcode.Arguments[0]
+		program.expresionOutput = &opcode.Arguments[0]
 		return nil
 	}
 
 	if opcode.Operation == "call_function" {
 		if functionName, ok := opcode.Arguments[0].(string); ok {
 			if val, ok := buildInFunctions[functionName]; ok {
+				if count, ok := opcode.Arguments[1].(int); ok {
+					*program.functionArgumentCount = count
+				} else {
+					return errors.New("call_function needs to have number of arguments as second parameter")
+				}
+
 				val(program)
-				program.functionArgsStack = []any{}
 				return nil
 			}
 
 			program.callstack = append(program.callstack, *program.codePointer)
+			if count, ok := opcode.Arguments[1].(int); ok {
+				*program.functionArgumentCount = count
+			} else {
+				return errors.New("call_function needs to have number of arguments as second parameter")
+			}
+
 			*program.codePointer, err = findLabel(program, "_function."+functionName)
 			if err != nil {
 				return err
@@ -83,17 +96,32 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_function_arg" {
-		program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
+		if opcode.Arguments[0] == "expresion_output" {
+			program.functionArgsStack = append(program.functionArgsStack, *program.expresionOutput)
+			//program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
+
+		} else {
+			program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
+		}
 	}
 
 	if opcode.Operation == "function_return" {
-		program.functionArgsStack = []any{}
+		//program.functionArgsStack = []any{}
 		newCodePointer := program.callstack[len(program.callstack)-1]
 		program.callstack = program.callstack[0 : len(program.callstack)-1]
 		*program.codePointer = newCodePointer
 	}
 
 	return nil
+}
+
+func getFunctionArguments(program *Program) []any {
+	arguments := program.functionArgsStack[0:*program.functionArgumentCount]
+
+	program.functionArgsStack = program.functionArgsStack[0 : len(program.functionArgsStack)-*program.functionArgumentCount]
+	*program.functionArgumentCount = 0
+
+	return arguments
 }
 
 func findLabel(program *Program, label string) (int, error) {

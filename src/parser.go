@@ -21,12 +21,17 @@ type Function struct {
 type Statement struct {
 	Declaration  *Declaration  `(@@ `
 	Expression   *Expression   `| @@`
-	FunctionCall *FunctionCall `| @@) ";"`
+	FunctionCall *FunctionCall `| @@`
+	ReturnStmt   *ReturnStmt   `| @@) ";"`
 }
 
 type Declaration struct {
 	Variable   string     `"var" @Symbol`
 	Expression Expression `"=" @@`
+}
+
+type ReturnStmt struct {
+	Expression Expression `"return" @@`
 }
 
 type FunctionCall struct {
