@@ -1,0 +1,5 @@
+function main() {
+      out("dupa");
+      out(12);
+      main();
+}
