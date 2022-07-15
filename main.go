@@ -6,6 +6,7 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/alecthomas/repr"
+	"karboScript/src"
 )
 
 var cli struct {
@@ -18,25 +19,17 @@ var ctx kong.Context
 
 func main() {
 
-	var opcodes []*Opcode
-
 	ctx := kong.Parse(&cli)
 
 	if cli.EBNF {
-		fmt.Println(Parser.String())
+		fmt.Println(karboscript.Parser.String())
 		ctx.Exit(0)
 	}
 
-	ast, err := parse(cli.File)
+	ast, err := karboscript.Parse(cli.File)
 
+	opcodes, err := karboscript.GetOpcodes(ast)
 	ctx.FatalIfErrorf(err)
-
-	for _, function := range ast.Functions {
-		err := parseFunction(&opcodes, function)
-		ctx.FatalIfErrorf(err)
-	}
-
-	opcodes = append(opcodes, &Opcode{"call_function", []any{"main", 0}, nil})
 
 	if cli.Opcode {
 		var str string
@@ -71,5 +64,6 @@ func main() {
 		ctx.Exit(0)
 	}
 
-	execute(&opcodes)
+	err = karboscript.Execute(&opcodes)
+	ctx.FatalIfErrorf(err)
 }

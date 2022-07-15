@@ -3,7 +3,7 @@ function main() {
 }
 
 function a1() {
-      return 12;
+      return "dupa";
 }
 function a2() {
       return 55;

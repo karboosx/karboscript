@@ -1,9 +1,8 @@
-package main
+package karboscript
 
 import (
-	"os"
-
 	"github.com/alecthomas/participle/v2"
+	"os"
 
 	"github.com/alecthomas/participle/v2/lexer"
 )
@@ -92,17 +91,26 @@ var (
 	)
 )
 
-func parse(file string) (*Code, error) {
+func Parse(file string) (*Code, error) {
 	r, err := os.Open(file)
-
 	if err != nil {
 		return nil, err
 	}
 
 	ast, err := Parser.Parse(file, r)
+	if err != nil {
+		return nil, err
+	}
 
-	r.Close()
+	err = r.Close()
+	if err != nil {
+		return nil, err
+	}
 
+	return ast, nil
+}
+func ParseString(code string) (*Code, error) {
+	ast, err := Parser.ParseString("", code)
 	if err != nil {
 		return nil, err
 	}

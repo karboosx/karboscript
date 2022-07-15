@@ -1,4 +1,4 @@
-package main
+package karboscript
 
 import (
 	"errors"
@@ -89,4 +89,19 @@ func parseFunction(stack *[]*Opcode, function *Function) error {
 		return err
 	}
 	return nil
+}
+
+func GetOpcodes(code *Code) ([]*Opcode, error) {
+	var opcodes []*Opcode
+
+	for _, function := range code.Functions {
+		err := parseFunction(&opcodes, function)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	opcodes = append(opcodes, &Opcode{"call_function", []any{"main", 0}, nil}, &Opcode{"exit", []any{"main", 0}, nil})
+
+	return opcodes, nil
 }

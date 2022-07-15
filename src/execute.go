@@ -1,4 +1,4 @@
-package main
+package karboscript
 
 import "errors"
 
@@ -12,9 +12,9 @@ type Program struct {
 	functionArgumentCount *int
 }
 
-func execute(stack *[]*Opcode) {
+func Execute(stack *[]*Opcode) error {
 	killSwitch := 1000
-	codePointer := len(*stack) - 1
+	codePointer := len(*stack) - 2
 	running := true
 	callstack := []int{}
 	functionArgumentCount := 0
@@ -32,16 +32,18 @@ func execute(stack *[]*Opcode) {
 
 		err := executeOpcode(&program)
 		if err != nil {
-			return
+			return err
 		}
 	}
+
+	return nil
 }
 
 func getNextOpcode(program *Program) (*Opcode, error) {
 	*program.codePointer++
 
 	if *program.codePointer > len((*program).Opcodes) {
-		return nil, errors.New("accessing outside of the program")
+		return nil, nil
 	}
 
 	return program.Opcodes[*program.codePointer-1], nil
@@ -49,6 +51,10 @@ func getNextOpcode(program *Program) (*Opcode, error) {
 
 func executeOpcode(program *Program) error {
 	opcode, err := getNextOpcode(program)
+
+	if opcode == nil {
+		return nil
+	}
 
 	if err != nil {
 		return err
@@ -73,7 +79,10 @@ func executeOpcode(program *Program) error {
 					return errors.New("call_function needs to have number of arguments as second parameter")
 				}
 
-				val(program)
+				err := val(program)
+				if err != nil {
+					return err
+				}
 				return nil
 			}
 
