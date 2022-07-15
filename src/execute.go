@@ -115,7 +115,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "function_return" {
-		//program.functionArgsStack = []any{}
+		//todo clear functions args from stack
 		newCodePointer := program.callstack[len(program.callstack)-1]
 		program.callstack = program.callstack[0 : len(program.callstack)-1]
 		*program.codePointer = newCodePointer
