@@ -28,7 +28,6 @@ func ExampleExpresionWithFuncTest() {
 	ast, err := karboscript.ParseString("function main() { out(1000 + test() * 2 + 22); } function test() { return 100;}")
 	
 	if err != nil {
-		
 	}
 
 	opcodes, _ := karboscript.GetOpcodes(ast)
