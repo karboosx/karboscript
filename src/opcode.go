@@ -107,6 +107,9 @@ func parseFactor(stack *[]*Opcode, factor *Factor) {
 	if factor.FunctionCall != nil {
 		parseFunctionCall(stack, factor.FunctionCall)
 	}
+	if factor.Variable != nil {
+		*stack = append(*stack, &Opcode{"push_exp_var", []any{factor.Variable.Value}, nil})
+	}
 	if factor.Subexpression != nil {
 		parseExpresion(stack, factor.Subexpression)
 	}
@@ -124,7 +127,7 @@ func parseFunction(stack *[]*Opcode, function *Function) error {
 	*stack = append(*stack, &Opcode{"function", []any{}, &label})
 
 	for _, argument := range function.Arguments {
-		*stack = append(*stack, &Opcode{"set_local_var", []any{argument.Name, argument.Type}, nil})
+		*stack = append(*stack, &Opcode{"set_local_var", []any{argument.Name.Value, argument.Type}, nil})
 	}
 
 	err := parseFunctionBody(stack, function)

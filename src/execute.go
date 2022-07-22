@@ -18,6 +18,7 @@ type Program struct {
 
 type Scope struct {
 	expresionStack []any
+	variable map[string]any
 }
 
 func (program *Program) getScope(depth int) *Scope {
@@ -43,7 +44,10 @@ func (scope *Scope) pushExp(value any) {
 }
 
 func (program *Program) addScope() {
-	program.scopes = append(program.scopes, &Scope{[]any{}})
+	program.scopes = append(program.scopes, &Scope{
+		expresionStack: []any{},
+		variable:       map[string]any{},
+	})
 }
 
 func (program *Program) subScope() *Scope {
@@ -53,6 +57,16 @@ func (program *Program) subScope() *Scope {
 
 	program.scopes = program.scopes[0:x]
 	return value
+}
+
+func (program *Program) getVariable(name string) any {
+	for i := 0; i < len(program.scopes)-1; i++ {
+		if _, ok := program.getScope(i).variable[name]; ok {
+			return program.getScope(i).variable[name]
+		}
+	}
+
+	return nil
 }
 
 func Execute(stack *[]*Opcode) error {
@@ -113,6 +127,12 @@ func executeOpcode(program *Program) error {
 		program.getScope(0).pushExp(opcode.Arguments[0])
 		return nil
 	}
+	if opcode.Operation == "push_exp_var" {
+		if name, ok := opcode.Arguments[0].(string); ok {
+			program.getScope(0).pushExp(program.getVariable(name))
+		}
+		return nil
+	}
 
 	if opcode.Operation == "add_scope" {
 		program.addScope()
@@ -120,6 +140,14 @@ func executeOpcode(program *Program) error {
 	}
 	if opcode.Operation == "sub_scope" {
 		program.lastScope = program.subScope()
+
+		return nil
+	}
+
+	if opcode.Operation == "set_local_var" {
+		if name, ok := opcode.Arguments[0].(string); ok {
+			program.getScope(0).variable[name] = program.popFunctionArgument()
+		}
 
 		return nil
 	}
@@ -218,16 +246,16 @@ func mathOperation(program *Program, opcode *Opcode) error {
 			if val2, ok := val2.(int); ok {
 				switch operation {
 				case "math_op_*":
-					program.getScope(0).pushExp(val1*val2)
+					program.getScope(0).pushExp(val2*val1)
 				case "math_op_/":
-					if val2 == 0 {
+					if val1 == 0 {
 						return errors.New("Division by 0!")
 					}
-					program.getScope(0).pushExp(val1/val2)
+					program.getScope(0).pushExp(val2/val1)
 				case "math_op_+":
-					program.getScope(0).pushExp(val1+val2)
+					program.getScope(0).pushExp(val2+val1)
 				case "math_op_-":
-					program.getScope(0).pushExp(val1-val2)
+					program.getScope(0).pushExp(val2-val1)
 				}
 
 				return nil
@@ -249,6 +277,16 @@ func getFunctionArguments(program *Program) []any {
 	*program.functionArgumentCount = 0
 
 	return arguments
+}
+
+func (program *Program) popFunctionArgument() any {
+	x := len(program.functionArgsStack) - 1
+	argument := program.functionArgsStack[x]
+
+	program.functionArgsStack = program.functionArgsStack[0 : len(program.functionArgsStack)-1]
+	*program.functionArgumentCount = 0
+
+	return argument
 }
 
 func findLabel(program *Program, label string) (int, error) {

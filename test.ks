@@ -1,5 +1,5 @@
-function test() {
-      return 12 + 134;
+function test(int $test) {
+      return 10 + $test;
 }
 
 function main() {
