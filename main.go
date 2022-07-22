@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	karboscript "karboScript/src"
+
 	"github.com/alecthomas/kong"
 	"github.com/alecthomas/repr"
-	"karboScript/src"
 )
 
 var cli struct {
