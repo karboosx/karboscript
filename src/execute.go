@@ -124,7 +124,7 @@ func executeOpcode(program *Program) error {
 		return nil
 	}
 
-	if opcode.Operation == "set_return" {
+	if opcode.Operation == "push_bellow" {
 		value, err := program.lastScope.popExp()
 		if err != nil {
 			return err
@@ -241,7 +241,9 @@ func mathOperation(program *Program, opcode *Opcode) error {
 }
 
 func getFunctionArguments(program *Program) []any {
-	arguments := program.functionArgsStack[0:*program.functionArgumentCount]
+	x := len(program.functionArgsStack) - *program.functionArgumentCount
+	x1 := len(program.functionArgsStack)
+	arguments := program.functionArgsStack[x:x1]
 
 	program.functionArgsStack = program.functionArgsStack[0 : len(program.functionArgsStack)-*program.functionArgumentCount]
 	*program.functionArgumentCount = 0

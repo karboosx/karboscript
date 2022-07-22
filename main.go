@@ -13,6 +13,7 @@ import (
 var cli struct {
 	EBNF   bool   `help:"Display DBNF."`
 	Opcode bool   `help:"Display DBNF."`
+	Tokens bool   `help:"Display DBNF."`
 	File   string `arg:"" optional:"" type:"existingfile" help:"GraphQL schema files to parse."`
 }
 
@@ -27,9 +28,39 @@ func main() {
 		ctx.Exit(0)
 	}
 
+	if cli.Tokens {
+		tokens, symbols, err := karboscript.GetTokens(cli.File)
+		ctx.FatalIfErrorf(err)
+
+		for {
+			t, err := tokens.Next()
+			ctx.FatalIfErrorf(err)
+
+			if t.EOF() {
+				break
+			}
+
+			found := false
+			for name, id := range symbols {
+				if (t.Type == id) {
+					repr.Println(name, t.Value)
+					found = true
+					break;
+				}
+			}
+
+			if !found {
+				repr.Println(t.Type, t.Value)
+			}
+
+		}
+
+		ctx.Exit(0)
+	}
+
 	ast, err := karboscript.Parse(cli.File)
 	ctx.FatalIfErrorf(err)
-	
+
 	opcodes, err := karboscript.GetOpcodes(ast)
 	ctx.FatalIfErrorf(err)
 

@@ -52,7 +52,7 @@ func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {
 
 func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
 	parseExpresionWithNewScope(stack, &returnStmt.Expression)
-	*stack = append(*stack, &Opcode{"set_return", []any{"pop_exp"}, nil})
+	*stack = append(*stack, &Opcode{"push_bellow", []any{"last_pop_exp"}, nil})
 	*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
 }
 

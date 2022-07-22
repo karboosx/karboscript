@@ -13,7 +13,7 @@ type Code struct {
 }
 
 type Function struct {
-	Name      string       `"function" @Symbol "("`
+	Name      string       `"function" @Ident "("`
 	Arguments []*Argument  `@@*")"`
 	Body      []*Statement `"{" @@* "}"`
 }
@@ -26,7 +26,7 @@ type Statement struct {
 }
 
 type Declaration struct {
-	Variable   string     `"var" @Symbol`
+	Variable   string     `"var" @Ident`
 	Expression Expression `"=" @@`
 }
 
@@ -35,28 +35,28 @@ type ReturnStmt struct {
 }
 
 type FunctionCall struct {
-	FunctionName string        `@Symbol "("`
+	FunctionName string        `@Ident "("`
 	Arguments    []*Expression ` [@@ ("," @@)*] ")"`
 }
 
 type Argument struct {
-	Type string `@Type`
-	Name string `@Symbol`
+	Type string   `@("int" | "string" | "float" | "bool")`
+	Name Variable `@@`
 }
 
 type Value struct {
-	String  *String  `@@`
-	Integer *Integer `| @@`
+	Integer *Integer `@@`
 	Float   *Float   `| @@`
 	Boolean *Boolean `| @@`
+	String  *String  `| @@`
 }
 
 type String struct {
-	Value string `"\"" @Symbol "\""`
+	Value string `@String`
 }
 
 type Integer struct {
-	Value int `@Integer`
+	Value int `@Int`
 }
 
 type Float struct {
@@ -64,22 +64,20 @@ type Float struct {
 }
 
 type Boolean struct {
-	Value int `@Boolean`
+	Value string `@("true"|"false")`
 }
 
-// type Expression struct {
-// 	Value        *Value        `(@@`
-// 	SubExpression *Expression `| @@`
-// 	FunctionCall *FunctionCall `| @@`
-// 	FunctionCall *FunctionCall `| @@)`
-// }
+type Variable struct {
+	Value string `"$" @Ident`
+}
 
 type Operator string
 
 type Factor struct {
-	Value         *Value        `(@@`
-	FunctionCall  *FunctionCall `| @@`
-	Subexpression *Expression   `| "(" @@ ")")`
+	FunctionCall  *FunctionCall `(@@`
+	Value         *Value        `| @@`
+	Subexpression *Expression   `| "(" @@ ")"`
+	Variable      *Variable     `| @@)`
 }
 
 type OpFactor struct {
@@ -102,23 +100,13 @@ type Expression struct {
 	Right []*OpTerm `@@*`
 }
 
-var LexerRules = []lexer.SimpleRule{
-	{"Type", `string|int|boolean|float`},
-	{"Boolean", `true|false`},
-	{"Comment", `(?:#|//)[^\n]*\n?`},
-	{"Punct", `[-[!@#$%^&*()+_={}\|:;"'<,>.?/]|]`},
-	{"Symbol", `[a-zA-Z^\n]\w*`},
-	{"Float", `\d+\.\d+`},
-	{"Integer", `[0-9^\.]+`},
-	{"Whitespace", `[ \t\n\r]+`},
-}
-
 var (
-	karboScriptLexer = lexer.MustSimple(LexerRules)
-	Parser           = participle.MustBuild[Code](
+	karboScriptLexer = lexer.NewTextScannerLexer(nil)
+
+	Parser = participle.MustBuild[Code](
 		participle.Lexer(karboScriptLexer),
-		participle.Elide("Comment", "Whitespace"),
-		participle.UseLookahead(4),
+		participle.Elide("Comment"),
+		participle.UseLookahead(2),
 	)
 )
 
@@ -140,6 +128,27 @@ func Parse(file string) (*Code, error) {
 
 	return ast, nil
 }
+
+func GetTokens(file string) (lexer.Lexer, map[string]lexer.TokenType, error) {
+	r, err := os.Open(file)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ast, err := karboScriptLexer.Lex(file, r)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	symbols := karboScriptLexer.Symbols()
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return ast, symbols, nil
+}
+
 func ParseString(code string) (*Code, error) {
 	ast, err := Parser.ParseString("", code)
 	if err != nil {
