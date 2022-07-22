@@ -95,9 +95,19 @@ type OpTerm struct {
 	Term     *Term    `@@`
 }
 
-type Expression struct {
+type ComTerm struct {
 	Left  *Term     `@@`
 	Right []*OpTerm `@@*`
+}
+
+type OpComTerm struct {
+	Operator Operator `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
+	Term     *ComTerm    `@@`
+}
+
+type Expression struct {
+	Left  *ComTerm     `@@`
+	Right []*OpComTerm `@@*`
 }
 
 var (

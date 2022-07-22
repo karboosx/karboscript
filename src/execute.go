@@ -233,7 +233,7 @@ func executeOpcode(program *Program) error {
 func mathOperation(program *Program, opcode *Opcode) error {
 	operation := fmt.Sprintf("%v", opcode.Arguments[0])
 
-	if operation == "math_op_*" || operation == "math_op_/" || operation == "math_op_+" || operation == "math_op_-" {
+	if operation == "*" || operation == "/" || operation == "+" || operation == "-" {
 		val1, err1 := program.getScope(0).popExp()
 		if err1 != nil {
 			return err1
@@ -245,16 +245,16 @@ func mathOperation(program *Program, opcode *Opcode) error {
 		if val1, ok := val1.(int); ok {
 			if val2, ok := val2.(int); ok {
 				switch operation {
-				case "math_op_*":
+				case "*":
 					program.getScope(0).pushExp(val2*val1)
-				case "math_op_/":
+				case "/":
 					if val1 == 0 {
 						return errors.New("Division by 0!")
 					}
 					program.getScope(0).pushExp(val2/val1)
-				case "math_op_+":
+				case "+":
 					program.getScope(0).pushExp(val2+val1)
-				case "math_op_-":
+				case "-":
 					program.getScope(0).pushExp(val2-val1)
 				}
 
@@ -265,6 +265,37 @@ func mathOperation(program *Program, opcode *Opcode) error {
 		return errors.New("Can't perform math operation!")
 	}
 
+	if operation == "!=" || operation == "==" || operation == ">" || operation == ">=" || operation == "<=" || operation == "<" {
+		val1, err1 := program.getScope(0).popExp()
+		if err1 != nil {
+			return err1
+		}
+		val2, err2 := program.getScope(0).popExp()
+		if err2 != nil {
+			return err2
+		}
+		if val1, ok := val1.(int); ok {
+			if val2, ok := val2.(int); ok {
+				switch operation {
+				case "==":
+					program.getScope(0).pushExp(val2 == val1)
+				case "!=":
+					program.getScope(0).pushExp(val2 != val1)
+				case ">":
+					program.getScope(0).pushExp(val2 > val1)
+				case ">=":
+					program.getScope(0).pushExp(val2 >= val1)
+				case "<":
+					program.getScope(0).pushExp(val2 < val1)
+				case "<=":
+					program.getScope(0).pushExp(val2 <= val1)
+				}
+
+				return nil
+			}
+		}
+
+	}
 	return errors.New("Wrong operation!")
 }
 

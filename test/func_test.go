@@ -48,3 +48,16 @@ func ExampleFuncWithArgTest() {
 	// Output:
 	// 1668 323
 }
+
+func ExampleCompareTest() {
+	ast, err := karboscript.ParseString("function main() { out(12 > 10, 10 == 10, 30 == 10, 10 != 10); }")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// true true false false
+}

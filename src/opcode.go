@@ -63,22 +63,34 @@ func parseExpresionWithNewScope(stack *[]*Opcode, expression *Expression) {
 }
 
 func parseExpresion(stack *[]*Opcode, expression *Expression) {
-	parseLeftExpresion(stack, expression.Left)
-	parseRightExpresion(stack, expression.Right)
+	parseComTerm(stack, expression.Left)
+	parseRightComExpresion(stack, expression.Right)
 }
 
-func parseRightExpresion(stack *[]*Opcode, opTerm []*OpTerm) {
+func parseRightComExpresion(stack *[]*Opcode, opComTerm []*OpComTerm) {
+	for _, opTerm := range opComTerm {
+		parseComTerm(stack, opTerm.Term)
+		*stack = append(*stack, &Opcode{"exp_call", []any{opTerm.Operator}, nil})
+	}
+}
+
+func parseComTerm(stack *[]*Opcode, comTerm *ComTerm) {
+	parseLeftTerm(stack, comTerm.Left)
+	parseRightTerm(stack, comTerm.Right)
+}
+
+func parseRightTerm(stack *[]*Opcode, opTerm []*OpTerm) {
 	parseOpTerm(stack, opTerm)
 }
 
 func parseOpTerm(stack *[]*Opcode, opTerms []*OpTerm) {
 	for _, opTerm := range opTerms {
 		parseTerm(stack, opTerm.Term)
-		*stack = append(*stack, &Opcode{"exp_call", []any{"math_op_"+opTerm.Operator}, nil})
+		*stack = append(*stack, &Opcode{"exp_call", []any{opTerm.Operator}, nil})
 	}
 }
 
-func parseLeftExpresion(stack *[]*Opcode, term *Term) {
+func parseLeftTerm(stack *[]*Opcode, term *Term) {
 	parseTerm(stack, term)
 }
 
@@ -90,7 +102,7 @@ func parseTerm(stack *[]*Opcode, term *Term) {
 func parseOpFactor(stack *[]*Opcode, opFactors []*OpFactor) {
 	for _, opFactor := range opFactors {
 		parseFactor(stack, opFactor.Factor)
-		*stack = append(*stack, &Opcode{"exp_call", []any{"math_op_"+opFactor.Operator}, nil})
+		*stack = append(*stack, &Opcode{"exp_call", []any{opFactor.Operator}, nil})
 	}
 }
 
@@ -102,6 +114,8 @@ func parseFactor(stack *[]*Opcode, factor *Factor) {
 			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil})
 		} else if factor.Value.String != nil {
 			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.String.Value}, nil})
+		} else if factor.Value.Boolean != nil {
+			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Boolean.Value}, nil})
 		}
 	}
 	if factor.FunctionCall != nil {

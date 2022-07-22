@@ -1,7 +1,7 @@
-function test(int $test) {
-      return 10 + $test;
+function test() {
+      return 9+1 == 11;
 }
 
 function main() {
-      out(test(123));
+      out(12 == 12, 12 > 10);
 }
