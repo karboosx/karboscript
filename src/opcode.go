@@ -28,7 +28,7 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 			parseFunctionCall(stack, statement.FunctionCall)
 		}
 		if statement.Expression != nil {
-			parseExpresion(stack, statement.Expression)
+			parseExpresionWithNewScope(stack, statement.Expression)
 		}
 		if statement.ReturnStmt != nil {
 			parseReturnStmt(stack, statement.ReturnStmt)
@@ -44,15 +44,22 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {
 	// todo check function declaration before making opcodes (like checking types of called function and numer of arguments)
 	for _, argument := range functionCall.Arguments {
-		parseExpresion(stack, argument)
+		parseExpresionWithNewScope(stack, argument)
 		*stack = append(*stack, &Opcode{"push_function_arg", []any{"pop_exp"}, nil})
 	}
 	*stack = append(*stack, &Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
 }
 
 func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
-	parseExpresion(stack, &returnStmt.Expression)
+	parseExpresionWithNewScope(stack, &returnStmt.Expression)
 	*stack = append(*stack, &Opcode{"set_return", []any{"pop_exp"}, nil})
+	*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
+}
+
+func parseExpresionWithNewScope(stack *[]*Opcode, expression *Expression) {
+	*stack = append(*stack, &Opcode{"add_scope", []any{""}, nil})
+	parseExpresion(stack, expression)
+	*stack = append(*stack, &Opcode{"sub_scope", []any{""}, nil})
 }
 
 func parseExpresion(stack *[]*Opcode, expression *Expression) {

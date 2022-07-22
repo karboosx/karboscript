@@ -12,25 +12,47 @@ type Program struct {
 	callstack             []int
 	functionArgsStack     []any
 	functionArgumentCount *int
-	expresionStack        []any
-	returnExp             *any
+	scopes                []*Scope
+	lastScope             *Scope
 }
 
-func (program *Program) popExp() (any, error) {
-	x := len(program.expresionStack) - 1
+type Scope struct {
+	expresionStack []any
+}
+
+func (program *Program) getScope(depth int) *Scope {
+	x := len(program.scopes) - 1 - depth
+	return program.scopes[x]
+}
+
+func (scope *Scope) popExp() (any, error) {
+	x := len(scope.expresionStack) - 1
 
 	if x < 0 {
 		return 0, errors.New("No value on expresion stack!")
 	}
 
-	value := program.expresionStack[x]
+	value := scope.expresionStack[x]
 
-	program.expresionStack = program.expresionStack[0:x]
+	scope.expresionStack = scope.expresionStack[0:x]
 	return value, nil
 }
 
-func (program *Program) pushExp(value any) {
-	program.expresionStack = append(program.expresionStack, value)
+func (scope *Scope) pushExp(value any) {
+	scope.expresionStack = append(scope.expresionStack, value)
+}
+
+func (program *Program) addScope() {
+	program.scopes = append(program.scopes, &Scope{[]any{}})
+}
+
+func (program *Program) subScope() *Scope {
+	x := len(program.scopes) - 1
+
+	value := program.scopes[x]
+
+	program.scopes = program.scopes[0:x]
+	return value
 }
 
 func Execute(stack *[]*Opcode) error {
@@ -41,8 +63,9 @@ func Execute(stack *[]*Opcode) error {
 	functionArgumentCount := 0
 
 	program := Program{
-		*stack, &codePointer, &running, callstack, []any{}, &functionArgumentCount, []any{}, nil,
+		*stack, &codePointer, &running, callstack, []any{}, &functionArgumentCount, []*Scope{}, nil,
 	}
+	program.addScope()
 
 	for *program.running {
 		killSwitch--
@@ -87,15 +110,26 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_exp" {
-		program.pushExp(opcode.Arguments[0])
+		program.getScope(0).pushExp(opcode.Arguments[0])
 		return nil
 	}
+
+	if opcode.Operation == "add_scope" {
+		program.addScope()
+		return nil
+	}
+	if opcode.Operation == "sub_scope" {
+		program.lastScope = program.subScope()
+
+		return nil
+	}
+
 	if opcode.Operation == "set_return" {
-		value, err := program.popExp()
+		value, err := program.lastScope.popExp()
 		if err != nil {
 			return err
 		}
-		program.returnExp = &value
+		program.getScope(1).pushExp(value)
 		return nil
 	}
 
@@ -109,7 +143,6 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "call_function" {
-		program.returnExp = nil
 		if functionName, ok := opcode.Arguments[0].(string); ok {
 			if val, ok := buildInFunctions[functionName]; ok {
 				if count, ok := opcode.Arguments[1].(int); ok {
@@ -133,6 +166,7 @@ func executeOpcode(program *Program) error {
 			}
 
 			*program.codePointer, err = findLabel(program, "_function."+functionName)
+			program.addScope()
 			if err != nil {
 				return err
 			}
@@ -145,7 +179,7 @@ func executeOpcode(program *Program) error {
 
 	if opcode.Operation == "push_function_arg" {
 		if opcode.Arguments[0] == "pop_exp" {
-			x, error := (*program).popExp()
+			x, error := (*program).lastScope.popExp()
 			if error != nil {
 				return error
 			}
@@ -158,14 +192,11 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "function_return" {
+		program.subScope()
 		//todo clear functions args from stack
 		newCodePointer := program.callstack[len(program.callstack)-1]
 		program.callstack = program.callstack[0 : len(program.callstack)-1]
 		*program.codePointer = newCodePointer
-
-		if (program.returnExp != nil){
-			program.pushExp(*program.returnExp)
-		}
 	}
 
 	return nil
@@ -175,11 +206,11 @@ func mathOperation(program *Program, opcode *Opcode) error {
 	operation := fmt.Sprintf("%v", opcode.Arguments[0])
 
 	if operation == "math_op_*" || operation == "math_op_/" || operation == "math_op_+" || operation == "math_op_-" {
-		val1, err1 := program.popExp()
+		val1, err1 := program.getScope(0).popExp()
 		if err1 != nil {
 			return err1
 		}
-		val2, err2 := program.popExp()
+		val2, err2 := program.getScope(0).popExp()
 		if err2 != nil {
 			return err2
 		}
@@ -187,16 +218,16 @@ func mathOperation(program *Program, opcode *Opcode) error {
 			if val2, ok := val2.(int); ok {
 				switch operation {
 				case "math_op_*":
-					program.pushExp(val1 * val2)
+					program.getScope(0).pushExp(val1*val2)
 				case "math_op_/":
 					if val2 == 0 {
 						return errors.New("Division by 0!")
 					}
-					program.pushExp(val1 / val2)
+					program.getScope(0).pushExp(val1/val2)
 				case "math_op_+":
-					program.pushExp(val1 + val2)
+					program.getScope(0).pushExp(val1+val2)
 				case "math_op_-":
-					program.pushExp(val1 - val2)
+					program.getScope(0).pushExp(val1-val2)
 				}
 
 				return nil

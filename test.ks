@@ -3,5 +3,5 @@ function main() {
 }
 
 function test() {
-      12;
+      return 12;
 }
