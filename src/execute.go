@@ -15,12 +15,17 @@ type Program struct {
 	expresionStack        []any
 }
 
-func (program *Program) popExp() any {
+func (program *Program) popExp() (any, error) {
 	x := len(program.expresionStack) - 1
+
+	if x < 0 {
+		return 0, errors.New("No value on expresion stack!")
+	}
+
 	value := program.expresionStack[x]
 
 	program.expresionStack = program.expresionStack[0:x]
-	return value
+	return value, nil
 }
 
 func (program *Program) pushExp(value any) {
@@ -130,7 +135,11 @@ func executeOpcode(program *Program) error {
 
 	if opcode.Operation == "push_function_arg" {
 		if opcode.Arguments[0] == "pop_exp" {
-			program.functionArgsStack = append(program.functionArgsStack, (*program).popExp())
+			x, error := (*program).popExp()
+			if error != nil {
+				return error
+			}
+			program.functionArgsStack = append(program.functionArgsStack, x)
 			//program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
 
 		} else {
@@ -152,8 +161,14 @@ func mathOperation(program *Program, opcode *Opcode) error {
 	operation := fmt.Sprintf("%v", opcode.Arguments[0])
 
 	if operation == "math_op_*" || operation == "math_op_/" || operation == "math_op_+" || operation == "math_op_-" {
-		val1 := program.popExp()
-		val2 := program.popExp()
+		val1, err1 := program.popExp()
+		if err1 != nil {
+			return err1
+		}
+		val2, err2 := program.popExp()
+		if err2 != nil {
+			return err2
+		}
 		if val1, ok := val1.(int); ok {
 			if val2, ok := val2.(int); ok {
 				switch operation {
