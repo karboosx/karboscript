@@ -4,11 +4,16 @@ import (
 	karboscript "karboScript/src"
 )
 
-func ExampleFuncTest() {
-	ast, _ := karboscript.Parse("testFunc.ks")
+func ExampleExpresionTest() {
+	ast, _ := karboscript.ParseString(`
+		function main() {
+			  out(12 + 14);
+		}
+	`)
+	
 	opcodes, _ := karboscript.GetOpcodes(ast)
 	_ = karboscript.Execute(&opcodes)
 
 	// Output:
-	// 12 55
+	// 26
 }

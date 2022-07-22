@@ -1,10 +1,7 @@
 function main() {
-      out(a1(), a2());
+      out(1000 + test() * 2);
 }
 
-function a1() {
-      return "dupa";
-}
-function a2() {
-      return 55;
+function test() {
+      return 12;
 }

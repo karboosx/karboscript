@@ -1,6 +1,9 @@
 package karboscript
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type Program struct {
 	Opcodes               []*Opcode
@@ -8,8 +11,20 @@ type Program struct {
 	running               *bool
 	callstack             []int
 	functionArgsStack     []any
-	expresionOutput       *any
 	functionArgumentCount *int
+	expresionStack        []any
+}
+
+func (program *Program) popExp() any {
+	x := len(program.expresionStack) - 1
+	value := program.expresionStack[x]
+
+	program.expresionStack = program.expresionStack[0:x]
+	return value
+}
+
+func (program *Program) pushExp(value any) {
+	program.expresionStack = append(program.expresionStack, value)
 }
 
 func Execute(stack *[]*Opcode) error {
@@ -20,7 +35,7 @@ func Execute(stack *[]*Opcode) error {
 	functionArgumentCount := 0
 
 	program := Program{
-		*stack, &codePointer, &running, callstack, []any{}, nil, &functionArgumentCount,
+		*stack, &codePointer, &running, callstack, []any{}, &functionArgumentCount, []any{},
 	}
 
 	for *program.running {
@@ -65,8 +80,17 @@ func executeOpcode(program *Program) error {
 		return nil
 	}
 
-	if opcode.Operation == "set_expresion_output" {
-		program.expresionOutput = &opcode.Arguments[0]
+	if opcode.Operation == "push_exp" {
+		program.pushExp(opcode.Arguments[0])
+		return nil
+	}
+
+	if opcode.Operation == "exp_call" {
+		error := mathOperation(program, opcode)
+		if error != nil {
+			return error
+		}
+
 		return nil
 	}
 
@@ -105,8 +129,8 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_function_arg" {
-		if opcode.Arguments[0] == "expresion_output" {
-			program.functionArgsStack = append(program.functionArgsStack, *program.expresionOutput)
+		if opcode.Arguments[0] == "pop_exp" {
+			program.functionArgsStack = append(program.functionArgsStack, (*program).popExp())
 			//program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
 
 		} else {
@@ -122,6 +146,38 @@ func executeOpcode(program *Program) error {
 	}
 
 	return nil
+}
+
+func mathOperation(program *Program, opcode *Opcode) error {
+	operation := fmt.Sprintf("%v", opcode.Arguments[0])
+
+	if operation == "math_op_*" || operation == "math_op_/" || operation == "math_op_+" || operation == "math_op_-" {
+		val1 := program.popExp()
+		val2 := program.popExp()
+		if val1, ok := val1.(int); ok {
+			if val2, ok := val2.(int); ok {
+				switch operation {
+				case "math_op_*":
+					program.pushExp(val1 * val2)
+				case "math_op_/":
+					if val2 == 0 {
+						return errors.New("Division by 0!")
+					}
+					program.pushExp(val1 / val2)
+				case "math_op_+":
+					program.pushExp(val1 + val2)
+				case "math_op_-":
+					program.pushExp(val1 - val2)
+				}
+
+				return nil
+			}
+		}
+
+		return errors.New("Can't perform math operation!")
+	}
+
+	return errors.New("Wrong operation!")
 }
 
 func getFunctionArguments(program *Program) []any {

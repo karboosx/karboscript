@@ -35,7 +35,10 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 		}
 	}
 
-	*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
+	
+	if (*stack)[len(*stack)-1].Operation != "function_return" {
+		*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
+	}
 	return nil
 }
 
@@ -43,29 +46,62 @@ func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {
 	// todo check function declaration before making opcodes (like checking types of called function and numer of arguments)
 	for _, argument := range functionCall.Arguments {
 		parseExpresion(stack, argument)
-		*stack = append(*stack, &Opcode{"push_function_arg", []any{"expresion_output"}, nil})
+		*stack = append(*stack, &Opcode{"push_function_arg", []any{"pop_exp"}, nil})
 	}
 	*stack = append(*stack, &Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
 }
 
 func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
 	parseExpresion(stack, &returnStmt.Expression)
-	*stack = append(*stack, &Opcode{"function_return", []any{""}, nil})
 }
 
 func parseExpresion(stack *[]*Opcode, expression *Expression) {
-	if expression.Value != nil {
-		if expression.Value.Float != nil {
-			*stack = append(*stack, &Opcode{"set_expresion_output", []any{expression.Value.Float.Value}, nil})
-		} else if expression.Value.Integer != nil {
-			*stack = append(*stack, &Opcode{"set_expresion_output", []any{expression.Value.Integer.Value}, nil})
-		} else if expression.Value.String != nil {
-			*stack = append(*stack, &Opcode{"set_expresion_output", []any{expression.Value.String.Value}, nil})
+	parseLeftExpresion(stack, expression.Left)
+	parseRightExpresion(stack, expression.Right)
+}
+
+func parseRightExpresion(stack *[]*Opcode, opTerm []*OpTerm) {
+	parseOpTerm(stack, opTerm)
+}
+
+func parseOpTerm(stack *[]*Opcode, opTerms []*OpTerm) {
+	for _, opTerm := range opTerms {
+		parseTerm(stack, opTerm.Term)
+		*stack = append(*stack, &Opcode{"exp_call", []any{"math_op_"+opTerm.Operator}, nil})
+	}
+}
+
+func parseLeftExpresion(stack *[]*Opcode, term *Term) {
+	parseTerm(stack, term)
+}
+
+func parseTerm(stack *[]*Opcode, term *Term) {
+	parseFactor(stack, term.Left)
+	parseOpFactor(stack, term.Right)
+}
+
+func parseOpFactor(stack *[]*Opcode, opFactors []*OpFactor) {
+	for _, opFactor := range opFactors {
+		parseFactor(stack, opFactor.Factor)
+		*stack = append(*stack, &Opcode{"exp_call", []any{"math_op_"+opFactor.Operator}, nil})
+	}
+}
+
+func parseFactor(stack *[]*Opcode, factor *Factor) {
+	if (factor.Value != nil) {
+		if factor.Value.Float != nil {
+			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Float.Value}, nil})
+		} else if factor.Value.Integer != nil {
+			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil})
+		} else if factor.Value.String != nil {
+			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.String.Value}, nil})
 		}
 	}
-	if expression.FunctionCall != nil {
-		parseFunctionCall(stack, expression.FunctionCall)
-		//*stack = append(*stack, &Opcode{"set_expresion_output", []any{"expresion_output"}, nil})
+	if factor.FunctionCall != nil {
+		parseFunctionCall(stack, factor.FunctionCall)
+	}
+	if factor.Subexpression != nil {
+		parseExpresion(stack, factor.Subexpression)
 	}
 }
 

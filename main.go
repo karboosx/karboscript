@@ -28,7 +28,8 @@ func main() {
 	}
 
 	ast, err := karboscript.Parse(cli.File)
-
+	ctx.FatalIfErrorf(err)
+	
 	opcodes, err := karboscript.GetOpcodes(ast)
 	ctx.FatalIfErrorf(err)
 

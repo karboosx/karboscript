@@ -1,8 +1,9 @@
 package karboscript
 
 import (
-	"github.com/alecthomas/participle/v2"
 	"os"
+
+	"github.com/alecthomas/participle/v2"
 
 	"github.com/alecthomas/participle/v2/lexer"
 )
@@ -19,8 +20,8 @@ type Function struct {
 
 type Statement struct {
 	Declaration  *Declaration  `(@@ `
-	Expression   *Expression   `| @@`
 	FunctionCall *FunctionCall `| @@`
+	Expression   *Expression   `| @@`
 	ReturnStmt   *ReturnStmt   `| @@) ";"`
 }
 
@@ -66,9 +67,39 @@ type Boolean struct {
 	Value int `@Boolean`
 }
 
+// type Expression struct {
+// 	Value        *Value        `(@@`
+// 	SubExpression *Expression `| @@`
+// 	FunctionCall *FunctionCall `| @@`
+// 	FunctionCall *FunctionCall `| @@)`
+// }
+
+type Operator string
+
+type Factor struct {
+	Value         *Value        `(@@`
+	FunctionCall  *FunctionCall `| @@`
+	Subexpression *Expression   `| "(" @@ ")")`
+}
+
+type OpFactor struct {
+	Operator Operator `@("*" | "/")`
+	Factor   *Factor  `@@`
+}
+
+type Term struct {
+	Left  *Factor     `@@`
+	Right []*OpFactor `@@*`
+}
+
+type OpTerm struct {
+	Operator Operator `@("+" | "-")`
+	Term     *Term    `@@`
+}
+
 type Expression struct {
-	Value        *Value        `(@@`
-	FunctionCall *FunctionCall `| @@)`
+	Left  *Term     `@@`
+	Right []*OpTerm `@@*`
 }
 
 var LexerRules = []lexer.SimpleRule{
