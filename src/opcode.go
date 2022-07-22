@@ -34,7 +34,6 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 			parseReturnStmt(stack, statement.ReturnStmt)
 		}
 	}
-
 	
 	if (*stack)[len(*stack)-1].Operation != "function_return" {
 		*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
@@ -53,6 +52,7 @@ func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {
 
 func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
 	parseExpresion(stack, &returnStmt.Expression)
+	*stack = append(*stack, &Opcode{"set_return", []any{"pop_exp"}, nil})
 }
 
 func parseExpresion(stack *[]*Opcode, expression *Expression) {

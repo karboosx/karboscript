@@ -13,6 +13,7 @@ type Program struct {
 	functionArgsStack     []any
 	functionArgumentCount *int
 	expresionStack        []any
+	returnExp             *any
 }
 
 func (program *Program) popExp() (any, error) {
@@ -40,7 +41,7 @@ func Execute(stack *[]*Opcode) error {
 	functionArgumentCount := 0
 
 	program := Program{
-		*stack, &codePointer, &running, callstack, []any{}, &functionArgumentCount, []any{},
+		*stack, &codePointer, &running, callstack, []any{}, &functionArgumentCount, []any{}, nil,
 	}
 
 	for *program.running {
@@ -89,6 +90,14 @@ func executeOpcode(program *Program) error {
 		program.pushExp(opcode.Arguments[0])
 		return nil
 	}
+	if opcode.Operation == "set_return" {
+		value, err := program.popExp()
+		if err != nil {
+			return err
+		}
+		program.returnExp = &value
+		return nil
+	}
 
 	if opcode.Operation == "exp_call" {
 		error := mathOperation(program, opcode)
@@ -100,6 +109,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "call_function" {
+		program.returnExp = nil
 		if functionName, ok := opcode.Arguments[0].(string); ok {
 			if val, ok := buildInFunctions[functionName]; ok {
 				if count, ok := opcode.Arguments[1].(int); ok {
@@ -152,6 +162,10 @@ func executeOpcode(program *Program) error {
 		newCodePointer := program.callstack[len(program.callstack)-1]
 		program.callstack = program.callstack[0 : len(program.callstack)-1]
 		*program.codePointer = newCodePointer
+
+		if (program.returnExp != nil){
+			program.pushExp(*program.returnExp)
+		}
 	}
 
 	return nil
