@@ -20,6 +20,7 @@ type Function struct {
 
 type Statement struct {
 	If           *If           `(@@ `
+	For          *For          `| @@ `
 	While        *While        `| @@ ) | `
 	Assigment    *Assigment    `(@@ `
 	FunctionCall *FunctionCall `| @@`
@@ -48,6 +49,12 @@ type If struct {
 
 type While struct {
 	Condition Expression   `"while" @@`
+	Body      []*Statement `"{" @@* "}"`
+}
+type For struct {
+	Init      Statement    `"for" "("? @@`
+	Condition Expression   `@@ ";"`
+	Increment Statement    `@@ ")"?`
 	Body      []*Statement `"{" @@* "}"`
 }
 
@@ -82,8 +89,6 @@ type Variable struct {
 	Value string `"$" @Ident`
 }
 
-type Operator string
-
 type Factor struct {
 	FunctionCall  *FunctionCall `(@@`
 	Value         *Value        `| @@`
@@ -92,7 +97,7 @@ type Factor struct {
 }
 
 type OpFactor struct {
-	Operator Operator `@("*" | "/")`
+	Operator string `@("*" | "/")`
 	Factor   *Factor  `@@`
 }
 
@@ -102,7 +107,7 @@ type Term struct {
 }
 
 type OpTerm struct {
-	Operator Operator `@("+" | "-")`
+	Operator string `@("+" | "-")`
 	Term     *Term    `@@`
 }
 
@@ -112,7 +117,7 @@ type ComTerm struct {
 }
 
 type OpComTerm struct {
-	Operator Operator `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
+	Operator string `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
 	Term     *ComTerm `@@`
 }
 

@@ -33,27 +33,34 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 
 func parseBody(stack *[]*Opcode, statements []*Statement) error {
 	for _, statement := range statements {
-		if statement.FunctionCall != nil {
-			parseFunctionCall(stack, statement.FunctionCall)
-		}
-		if statement.Expression != nil {
-			parseExpresionWithNewScope(stack, statement.Expression)
-		}
-		if statement.ReturnStmt != nil {
-			parseReturnStmt(stack, statement.ReturnStmt)
-		}
-		if statement.Assigment != nil {
-			parseAssigment(stack, statement.Assigment)
-		}
-		if statement.If != nil {
-			parseIf(stack, statement.If)
-		}
-		if statement.While != nil {
-			parseWhile(stack, statement.While)
-		}
+		parseStatement(stack, statement)
 	}
 
 	return nil
+}
+
+func parseStatement(stack *[]*Opcode, statement *Statement) {
+	if statement.FunctionCall != nil {
+		parseFunctionCall(stack, statement.FunctionCall)
+	}
+	if statement.Expression != nil {
+		parseExpresionWithNewScope(stack, statement.Expression)
+	}
+	if statement.ReturnStmt != nil {
+		parseReturnStmt(stack, statement.ReturnStmt)
+	}
+	if statement.Assigment != nil {
+		parseAssigment(stack, statement.Assigment)
+	}
+	if statement.If != nil {
+		parseIf(stack, statement.If)
+	}
+	if statement.While != nil {
+		parseWhile(stack, statement.While)
+	}
+	if statement.For != nil {
+		parseFor(stack, statement.For)
+	}
 }
 
 func parseWhile(stack *[]*Opcode, while *While) {
@@ -69,6 +76,25 @@ func parseWhile(stack *[]*Opcode, while *While) {
 	*stack = append(*stack, &Opcode{"jmp", []any{labelBeforeExpresion}, nil})
 
 	*stack = append(*stack, &Opcode{"while_else", []any{}, &label})
+}
+
+func parseFor(stack *[]*Opcode, forStmt *For) {
+	parseStatement(stack, &forStmt.Init)
+
+	labelBeforeExpresion := newLabel(stack, "for")
+	*stack = append(*stack, &Opcode{"for_start", []any{}, &labelBeforeExpresion})
+
+	parseExpresionWithNewScope(stack, &forStmt.Condition)
+
+	label := newLabel(stack, "for")
+
+	*stack = append(*stack, &Opcode{"for", []any{"last_pop_exp", label}, nil})
+	parseBody(stack, forStmt.Body)
+	parseStatement(stack, &forStmt.Increment)
+
+	*stack = append(*stack, &Opcode{"jmp", []any{labelBeforeExpresion}, nil})
+
+	*stack = append(*stack, &Opcode{"for_else", []any{}, &label})
 }
 
 func newLabel(stack *[]*Opcode, labelType string) string {
@@ -112,9 +138,9 @@ func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
 }
 
 func parseExpresionWithNewScope(stack *[]*Opcode, expression *Expression) {
-	*stack = append(*stack, &Opcode{"add_scope", []any{""}, nil})
+	*stack = append(*stack, &Opcode{"add_scope", []any{}, nil})
 	parseExpresion(stack, expression)
-	*stack = append(*stack, &Opcode{"sub_scope", []any{""}, nil})
+	*stack = append(*stack, &Opcode{"sub_scope", []any{}, nil})
 }
 
 func parseExpresion(stack *[]*Opcode, expression *Expression) {

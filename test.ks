@@ -1,12 +1,5 @@
 function main() {
-    $a = 1;
-    $b = 1;
-
-    while ($b < 500) {
-        
-        $c = $b;
-        $b = $a + $b;
-        $a = $c;
-        out ($b);
+    for $i=0; $i<10; $i=$i+1; {
+        out($i);
     }
 }

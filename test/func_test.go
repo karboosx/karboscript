@@ -133,3 +133,24 @@ func ExampleDoubleWhileTest() {
 	// 2 1
 	// 2 2
 }
+func ExampleForTest() {
+	ast, err := karboscript.ParseString("function main() {    for $i=0; $i<10; $i=$i+1; {        out($i);    }}")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 0
+	// 1
+	// 2
+	// 3
+	// 4
+	// 5
+	// 6
+	// 7
+	// 8
+	// 9
+}

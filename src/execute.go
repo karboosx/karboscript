@@ -260,7 +260,7 @@ func executeOpcode(program *Program) error {
 		return nil
 	}
 
-	if opcode.Operation == "while" {
+	if opcode.Operation == "while" || opcode.Operation == "for" {
 		lastVal, err := program.lastScope.popExp()
 		if err != nil {
 			return err
