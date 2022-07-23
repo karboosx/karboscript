@@ -33,12 +33,21 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 		if statement.ReturnStmt != nil {
 			parseReturnStmt(stack, statement.ReturnStmt)
 		}
+		if statement.Assigment != nil {
+			parseAssigment(stack, statement.Assigment)
+		}
 	}
 	
 	if (*stack)[len(*stack)-1].Operation != "function_return" {
 		*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
 	}
 	return nil
+}
+
+func parseAssigment(stack *[]*Opcode, assigment *Assigment) {
+	parseExpresionWithNewScope(stack, &assigment.Expression)
+	*stack = append(*stack, &Opcode{"set_local_var_exp", []any{assigment.Variable.Value, "last_pop_exp"}, nil})
+
 }
 
 func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {

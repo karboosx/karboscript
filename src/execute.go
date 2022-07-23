@@ -151,6 +151,16 @@ func executeOpcode(program *Program) error {
 
 		return nil
 	}
+	if opcode.Operation == "set_local_var_exp" {
+		if name, ok := opcode.Arguments[0].(string); ok {
+			program.getScope(0).variable[name], err = program.lastScope.popExp()
+			if (err != nil) {
+				return err
+			}
+		}
+
+		return nil
+	}
 
 	if opcode.Operation == "push_bellow" {
 		value, err := program.lastScope.popExp()

@@ -48,7 +48,6 @@ func ExampleFuncWithArgTest() {
 	// Output:
 	// 1668 323
 }
-
 func ExampleCompareTest() {
 	ast, err := karboscript.ParseString("function main() { out(12 > 10, 10 == 10, 30 == 10, 10 != 10); }")
 	
@@ -60,4 +59,16 @@ func ExampleCompareTest() {
 
 	// Output:
 	// true true false false
+}
+func ExampleLocalVarTest() {
+	ast, err := karboscript.ParseString("function test() { $a = 100; $aaa = 12 + $a; return $aaa;}function main() { out(test());}	")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 112
 }

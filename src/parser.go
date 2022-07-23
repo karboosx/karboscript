@@ -19,14 +19,14 @@ type Function struct {
 }
 
 type Statement struct {
-	Declaration  *Declaration  `(@@ `
+	Assigment    *Assigment    `(@@ `
 	FunctionCall *FunctionCall `| @@`
 	Expression   *Expression   `| @@`
 	ReturnStmt   *ReturnStmt   `| @@) ";"`
 }
 
-type Declaration struct {
-	Variable   string     `"var" @Ident`
+type Assigment struct {
+	Variable   Variable     `@@`
 	Expression Expression `"=" @@`
 }
 
@@ -102,7 +102,7 @@ type ComTerm struct {
 
 type OpComTerm struct {
 	Operator Operator `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
-	Term     *ComTerm    `@@`
+	Term     *ComTerm `@@`
 }
 
 type Expression struct {

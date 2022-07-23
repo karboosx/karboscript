@@ -1,7 +1,1 @@
-function test() {
-      return 9+1 == 11;
-}
-
-function main() {
-      out(12 == 12, 12 > 10);
-}
+function test() { $a = 100; $aaa = 12 + $a; return $aaa;}function main() { out(test());}
