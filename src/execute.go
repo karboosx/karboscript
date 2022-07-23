@@ -80,8 +80,27 @@ func (program *Program) getVariable(name string) any {
 	return nil
 }
 
+func (program *Program) getVariableScopePosition(name string) int {
+	meetFinal := false
+	for i := 0; i < len(program.scopes)-1; i++ {
+		if meetFinal {
+			return -1
+		}
+
+		if program.getScope(i).isFinal {
+			meetFinal = true
+		}
+
+		if _, ok := program.getScope(i).variable[name]; ok {
+			return i
+		}
+	}
+
+	return -1
+}
+
 func Execute(stack *[]*Opcode) error {
-	killSwitch := 1000
+	killSwitch := 100000
 	codePointer := len(*stack) - 2
 	running := true
 	callstack := []int{}
@@ -121,6 +140,8 @@ func getNextOpcode(program *Program) (*Opcode, error) {
 func executeOpcode(program *Program) error {
 	opcode, err := getNextOpcode(program)
 
+	//fmt.Println(opcode)
+
 	if opcode == nil {
 		return nil
 	}
@@ -158,7 +179,13 @@ func executeOpcode(program *Program) error {
 
 	if opcode.Operation == "set_local_var_arg" {
 		if name, ok := opcode.Arguments[0].(string); ok {
-			program.getScope(0).variable[name] = program.popFunctionArgument()
+			varScopePosition := program.getVariableScopePosition(name)
+
+			if (varScopePosition > -1) {
+				program.getScope(varScopePosition).variable[name] = program.popFunctionArgument()
+			}else {
+				program.getScope(0).variable[name] = program.popFunctionArgument()
+			}
 		}
 
 		return nil
@@ -166,7 +193,14 @@ func executeOpcode(program *Program) error {
 
 	if opcode.Operation == "set_local_var_exp" {
 		if name, ok := opcode.Arguments[0].(string); ok {
-			program.getScope(0).variable[name], err = program.lastScope.popExp()
+			varScopePosition := program.getVariableScopePosition(name)
+
+			if (varScopePosition > -1) {
+				program.getScope(varScopePosition).variable[name], err = program.lastScope.popExp()
+			}else {
+				program.getScope(0).variable[name], err = program.lastScope.popExp()
+			}
+
 			if err != nil {
 				return err
 			}

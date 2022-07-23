@@ -118,3 +118,18 @@ func ExampleWhileTest() {
 	// 8
 	// 9
 }
+func ExampleDoubleWhileTest() {
+	ast, err := karboscript.ParseString("function main() {    $a = 1;    $b = 1;    while ($a < 3) {        $b = 1;        while ($b < 3) {            out ($a, $b);            $b=$b+1;        }        $a=$a+1;    }}")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 1 1
+	// 1 2
+	// 2 1
+	// 2 2
+}

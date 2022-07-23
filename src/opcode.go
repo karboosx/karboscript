@@ -64,7 +64,7 @@ func parseWhile(stack *[]*Opcode, while *While) {
 
 	label := newLabel(stack, "while")
 
-	*stack = append(*stack, &Opcode{"while", []any{"last_pop_exp", labelBeforeExpresion, label}, nil})
+	*stack = append(*stack, &Opcode{"while", []any{"last_pop_exp", label}, nil})
 	parseBody(stack, while.Body)
 	*stack = append(*stack, &Opcode{"jmp", []any{labelBeforeExpresion}, nil})
 
