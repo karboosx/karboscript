@@ -19,12 +19,12 @@ type Function struct {
 }
 
 type Statement struct {
-	If           *If           `@@ | `
+	If           *If           `(@@ `
+	While        *While        `| @@ ) | `
 	Assigment    *Assigment    `(@@ `
 	FunctionCall *FunctionCall `| @@`
 	Expression   *Expression   `| @@`
 	ReturnStmt   *ReturnStmt   `| @@) ";"`
-
 }
 
 type Assigment struct {
@@ -43,6 +43,11 @@ type FunctionCall struct {
 
 type If struct {
 	Condition Expression   `"if" @@`
+	Body      []*Statement `"{" @@* "}"`
+}
+
+type While struct {
+	Condition Expression   `"while" @@`
 	Body      []*Statement `"{" @@* "}"`
 }
 

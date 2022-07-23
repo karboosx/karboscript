@@ -48,9 +48,33 @@ func parseBody(stack *[]*Opcode, statements []*Statement) error {
 		if statement.If != nil {
 			parseIf(stack, statement.If)
 		}
+		if statement.While != nil {
+			parseWhile(stack, statement.While)
+		}
 	}
 
 	return nil
+}
+
+func parseWhile(stack *[]*Opcode, while *While) {
+	labelBeforeExpresion := newLabel(stack, "while")
+	*stack = append(*stack, &Opcode{"while_start", []any{}, &labelBeforeExpresion})
+
+	parseExpresionWithNewScope(stack, &while.Condition)
+
+	label := newLabel(stack, "while")
+
+	*stack = append(*stack, &Opcode{"while", []any{"last_pop_exp", labelBeforeExpresion, label}, nil})
+	parseBody(stack, while.Body)
+	*stack = append(*stack, &Opcode{"jmp", []any{labelBeforeExpresion}, nil})
+
+	*stack = append(*stack, &Opcode{"while_else", []any{}, &label})
+}
+
+func newLabel(stack *[]*Opcode, labelType string) string {
+	lenStack := len(*stack)
+	label := "_" + labelType + "." + strconv.FormatInt(int64(lenStack), 16)
+	return label
 }
 
 func parseIf(stack *[]*Opcode, ifStmt *If) {

@@ -213,6 +213,39 @@ func executeOpcode(program *Program) error {
 		}
 		return nil
 	}
+	if opcode.Operation == "jmp" {
+
+		if label, ok := opcode.Arguments[0].(string); ok {
+			*program.codePointer, err = findLabel(program, label)
+
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	if opcode.Operation == "while" {
+		lastVal, err := program.lastScope.popExp()
+		if err != nil {
+			return err
+		}
+
+		if val, ok := lastVal.(bool); ok {
+			if label, ok := opcode.Arguments[1].(string); ok {
+				if !val {
+					*program.codePointer, err = findLabel(program, label)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		} else {
+			return errors.New("Condition must return bool")
+		}
+		return nil
+	}
 
 	if opcode.Operation == "call_function" {
 		if functionName, ok := opcode.Arguments[0].(string); ok {

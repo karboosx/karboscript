@@ -97,3 +97,24 @@ func ExampleIfTest() {
 	// "10 == 10"
 	// "12 > 10"
 }
+func ExampleWhileTest() {
+	ast, err := karboscript.ParseString("function main() {    $a = 0;    while ($a < 10) {        out ($a);        $a = $a + 1;    }}")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 0
+	// 1
+	// 2
+	// 3
+	// 4
+	// 5
+	// 6
+	// 7
+	// 8
+	// 9
+}
