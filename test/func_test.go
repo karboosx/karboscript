@@ -37,7 +37,7 @@ func ExampleExpresionWithFuncTest() {
 	// 1222
 }
 func ExampleFuncWithArgTest() {
-	ast, err := karboscript.ParseString("function main() { out(1000 + test(123) * 2 + 22, test(123)); } function test(int $test) { return $test + 200;}")
+	ast, err := karboscript.ParseString("function main() { out(1000 + test(123) * 2 + 22, test(123)); } function test($test) { return $test + 200;}")
 	
 	if err != nil {
 	}

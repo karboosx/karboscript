@@ -14,7 +14,7 @@ type Code struct {
 
 type Function struct {
 	Name      string       `"function" @Ident "("`
-	Arguments []*Argument  `@@*")"`
+	Arguments []*Argument  ` [@@ ("," @@)*] ")"`
 	Body      []*Statement `"{" @@* "}"`
 }
 
@@ -52,8 +52,7 @@ type While struct {
 }
 
 type Argument struct {
-	Type string   `@("int" | "string" | "float" | "bool")`
-	Name Variable `@@`
+	Variable Variable `@@`
 }
 
 type Value struct {

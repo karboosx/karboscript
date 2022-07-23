@@ -196,7 +196,7 @@ func parseFunction(stack *[]*Opcode, function *Function) error {
 	*stack = append(*stack, &Opcode{"function", []any{}, &label})
 
 	for _, argument := range function.Arguments {
-		*stack = append(*stack, &Opcode{"set_local_var_arg", []any{argument.Name.Value, argument.Type}, nil})
+		*stack = append(*stack, &Opcode{"set_local_var_arg", []any{argument.Variable.Value,}, nil})
 	}
 
 	err := parseFunctionBody(stack, function)
