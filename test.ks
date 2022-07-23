@@ -1,1 +1,1 @@
-function test() { $a = 100; $aaa = 12 + $a; return $aaa;}function main() { out(test());}
+function test() { out($a); }function main() { $a = 10; test();}	

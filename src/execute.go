@@ -18,7 +18,8 @@ type Program struct {
 
 type Scope struct {
 	expresionStack []any
-	variable map[string]any
+	variable       map[string]any
+	isFinal        bool
 }
 
 func (program *Program) getScope(depth int) *Scope {
@@ -47,6 +48,7 @@ func (program *Program) addScope() {
 	program.scopes = append(program.scopes, &Scope{
 		expresionStack: []any{},
 		variable:       map[string]any{},
+		isFinal:        false,
 	})
 }
 
@@ -60,7 +62,16 @@ func (program *Program) subScope() *Scope {
 }
 
 func (program *Program) getVariable(name string) any {
+	meetFinal := false
 	for i := 0; i < len(program.scopes)-1; i++ {
+		if (meetFinal) {
+			return nil
+		}
+		
+		if (program.getScope(i).isFinal) {
+			meetFinal = true
+		}
+
 		if _, ok := program.getScope(i).variable[name]; ok {
 			return program.getScope(i).variable[name]
 		}
@@ -138,23 +149,25 @@ func executeOpcode(program *Program) error {
 		program.addScope()
 		return nil
 	}
+
 	if opcode.Operation == "sub_scope" {
 		program.lastScope = program.subScope()
 
 		return nil
 	}
 
-	if opcode.Operation == "set_local_var" {
+	if opcode.Operation == "set_local_var_arg" {
 		if name, ok := opcode.Arguments[0].(string); ok {
 			program.getScope(0).variable[name] = program.popFunctionArgument()
 		}
 
 		return nil
 	}
+
 	if opcode.Operation == "set_local_var_exp" {
 		if name, ok := opcode.Arguments[0].(string); ok {
 			program.getScope(0).variable[name], err = program.lastScope.popExp()
-			if (err != nil) {
+			if err != nil {
 				return err
 			}
 		}
@@ -205,6 +218,7 @@ func executeOpcode(program *Program) error {
 
 			*program.codePointer, err = findLabel(program, "_function."+functionName)
 			program.addScope()
+			program.getScope(0).isFinal = true
 			if err != nil {
 				return err
 			}
@@ -256,16 +270,16 @@ func mathOperation(program *Program, opcode *Opcode) error {
 			if val2, ok := val2.(int); ok {
 				switch operation {
 				case "*":
-					program.getScope(0).pushExp(val2*val1)
+					program.getScope(0).pushExp(val2 * val1)
 				case "/":
 					if val1 == 0 {
 						return errors.New("Division by 0!")
 					}
-					program.getScope(0).pushExp(val2/val1)
+					program.getScope(0).pushExp(val2 / val1)
 				case "+":
-					program.getScope(0).pushExp(val2+val1)
+					program.getScope(0).pushExp(val2 + val1)
 				case "-":
-					program.getScope(0).pushExp(val2-val1)
+					program.getScope(0).pushExp(val2 - val1)
 				}
 
 				return nil

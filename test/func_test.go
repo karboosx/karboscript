@@ -72,3 +72,16 @@ func ExampleLocalVarTest() {
 	// Output:
 	// 112
 }
+
+func ExampleLocalVarKeepsLocalScopeTest() {
+	ast, err := karboscript.ParseString("function test() { out($a); }function main() { $a = 10; test();}	")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// <nil>
+}
