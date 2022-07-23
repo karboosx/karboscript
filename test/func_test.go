@@ -72,7 +72,6 @@ func ExampleLocalVarTest() {
 	// Output:
 	// 112
 }
-
 func ExampleLocalVarKeepsLocalScopeTest() {
 	ast, err := karboscript.ParseString("function test() { out($a); }function main() { $a = 10; test();}	")
 	
@@ -84,4 +83,17 @@ func ExampleLocalVarKeepsLocalScopeTest() {
 
 	// Output:
 	// <nil>
+}
+func ExampleIfTest() {
+	ast, err := karboscript.ParseString("function main() {    if (10 == 10) {        out(\"10 == 10\");    }    if (500 < 200) {        out(\"500 < 200\");    }    if (12 > 10) {        out(\"12 > 10\");    }}	")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// "10 == 10"
+	// "12 > 10"
 }

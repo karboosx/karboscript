@@ -19,14 +19,16 @@ type Function struct {
 }
 
 type Statement struct {
+	If           *If           `@@ | `
 	Assigment    *Assigment    `(@@ `
 	FunctionCall *FunctionCall `| @@`
 	Expression   *Expression   `| @@`
 	ReturnStmt   *ReturnStmt   `| @@) ";"`
+
 }
 
 type Assigment struct {
-	Variable   Variable     `@@`
+	Variable   Variable   `@@`
 	Expression Expression `"=" @@`
 }
 
@@ -37,6 +39,11 @@ type ReturnStmt struct {
 type FunctionCall struct {
 	FunctionName string        `@Ident "("`
 	Arguments    []*Expression ` [@@ ("," @@)*] ")"`
+}
+
+type If struct {
+	Condition Expression   `"if" @@`
+	Body      []*Statement `"{" @@* "}"`
 }
 
 type Argument struct {

@@ -64,11 +64,11 @@ func (program *Program) subScope() *Scope {
 func (program *Program) getVariable(name string) any {
 	meetFinal := false
 	for i := 0; i < len(program.scopes)-1; i++ {
-		if (meetFinal) {
+		if meetFinal {
 			return nil
 		}
-		
-		if (program.getScope(i).isFinal) {
+
+		if program.getScope(i).isFinal {
 			meetFinal = true
 		}
 
@@ -190,6 +190,27 @@ func executeOpcode(program *Program) error {
 			return error
 		}
 
+		return nil
+	}
+
+	if opcode.Operation == "if" {
+		lastVal, err := program.lastScope.popExp()
+		if err != nil {
+			return err
+		}
+
+		if val, ok := lastVal.(bool); ok {
+			if label, ok := opcode.Arguments[1].(string); ok {
+				if !val {
+					*program.codePointer, err = findLabel(program, label)
+				}
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			return errors.New("Condition must return bool")
+		}
 		return nil
 	}
 

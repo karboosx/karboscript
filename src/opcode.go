@@ -2,6 +2,7 @@ package karboscript
 
 import (
 	"errors"
+	"strconv"
 )
 
 type OpCodes struct {
@@ -23,7 +24,15 @@ func (m *ParseError) Error() string {
 }
 
 func parseFunctionBody(stack *[]*Opcode, function *Function) error {
-	for _, statement := range function.Body {
+	parseBody(stack, function.Body)
+	if (*stack)[len(*stack)-1].Operation != "function_return" {
+		*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
+	}
+	return nil
+}
+
+func parseBody(stack *[]*Opcode, statements []*Statement) error {
+	for _, statement := range statements {
 		if statement.FunctionCall != nil {
 			parseFunctionCall(stack, statement.FunctionCall)
 		}
@@ -36,12 +45,25 @@ func parseFunctionBody(stack *[]*Opcode, function *Function) error {
 		if statement.Assigment != nil {
 			parseAssigment(stack, statement.Assigment)
 		}
+		if statement.If != nil {
+			parseIf(stack, statement.If)
+		}
 	}
-	
-	if (*stack)[len(*stack)-1].Operation != "function_return" {
-		*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
-	}
+
 	return nil
+}
+
+func parseIf(stack *[]*Opcode, ifStmt *If) {
+	parseExpresionWithNewScope(stack, &ifStmt.Condition)
+
+	lenStack := len(*stack)
+	label := "_if." + strconv.FormatInt(int64(lenStack), 16)
+
+	*stack = append(*stack, &Opcode{"if", []any{"last_pop_exp", label}, nil})
+	parseBody(stack, ifStmt.Body)
+
+	*stack = append(*stack, &Opcode{"if_else", []any{}, &label})
+
 }
 
 func parseAssigment(stack *[]*Opcode, assigment *Assigment) {
@@ -116,7 +138,7 @@ func parseOpFactor(stack *[]*Opcode, opFactors []*OpFactor) {
 }
 
 func parseFactor(stack *[]*Opcode, factor *Factor) {
-	if (factor.Value != nil) {
+	if factor.Value != nil {
 		if factor.Value.Float != nil {
 			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Float.Value}, nil})
 		} else if factor.Value.Integer != nil {

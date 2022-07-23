@@ -1,1 +1,11 @@
-function test() { out($a); }function main() { $a = 10; test();}	
+function main() {
+    if (10 == 10) {
+        out("10 == 10");
+    }
+    if (500 < 200) {
+        out("500 < 200");
+    }
+    if (12 > 10) {
+        out("12 > 10");
+    }
+}
