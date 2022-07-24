@@ -8,15 +8,15 @@ Simple programming language made for fun to learn how parsers and compilers work
 Fibonaci:
 ```
 function main() {
-    $a = 1;
-    $b = 1;
+    a = 1;
+    b = 1;
 
-    while ($b < 500) {
+    while (b < 500) {
 
-        $c = $b;
-        $b = $a + $b;
-        $a = $c;
-        out ($b);
+        c = b;
+        b = a + b;
+        a = c;
+        out (b);
     }
 }
 ```
@@ -24,17 +24,17 @@ function main() {
 Using while:
 ```
 function main() {
-    $a = 1;
-    $b = 1;
+    a = 1;
+    b = 1;
 
-    while ($a < 5) {
-        $b = 1;
-        while ($b < 5) {
-            test ("test", $b);
-            $b=$b+1;
+    while (a < 5) {
+        b = 1;
+        while (b < 5) {
+            test ("test", b);
+            b=b+1;
         }
 
-        $a=$a+1;
+        a=a+1;
     }
 }
 
@@ -63,17 +63,17 @@ function main()
     out(1000 + test(800), test(500));
 }
 
-function test($test)
+function test(test)
 {
-    return $test + 200;
+    return test + 200;
 }
 ```
 
 For loop
 ```
 function main() {
-    for $i=0; $i<10; $i=$i+1; {
-        out($i);
+    for i=0; i<10; i=i+1; {
+        out(i);
     }
 }
 ```
@@ -82,7 +82,7 @@ Read line from stdin
 ```
 function main() {
     out("Enter name: ");
-    $name = readLine();
-    out("Your name is:", $name);
+    name = readLine();
+    out("Your name is:", name);
 }
 ```

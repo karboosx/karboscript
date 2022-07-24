@@ -23,10 +23,10 @@ type Statement struct {
 	If           *If           `(@@ `
 	For          *For          `| @@ `
 	While        *While        `| @@ ) | `
-	Assigment    *Assigment    `(@@ `
+	ReturnStmt   *ReturnStmt   `( @@ `
+	Assigment    *Assigment    `| @@ `
 	FunctionCall *FunctionCall `| @@`
-	Expression   *Expression   `| @@`
-	ReturnStmt   *ReturnStmt   `| @@) ";"`
+	Expression   *Expression   `| @@) ";"`
 }
 
 type Assigment struct {
@@ -87,7 +87,7 @@ type Boolean struct {
 }
 
 type Variable struct {
-	Value string `"$" @Ident`
+	Value string `@Ident`
 }
 
 type Factor struct {
