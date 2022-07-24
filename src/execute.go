@@ -181,9 +181,9 @@ func executeOpcode(program *Program) error {
 		if name, ok := opcode.Arguments[0].(string); ok {
 			varScopePosition := program.getVariableScopePosition(name)
 
-			if (varScopePosition > -1) {
+			if varScopePosition > -1 {
 				program.getScope(varScopePosition).variable[name] = program.popFunctionArgument()
-			}else {
+			} else {
 				program.getScope(0).variable[name] = program.popFunctionArgument()
 			}
 		}
@@ -195,9 +195,9 @@ func executeOpcode(program *Program) error {
 		if name, ok := opcode.Arguments[0].(string); ok {
 			varScopePosition := program.getVariableScopePosition(name)
 
-			if (varScopePosition > -1) {
+			if varScopePosition > -1 {
 				program.getScope(varScopePosition).variable[name], err = program.lastScope.popExp()
-			}else {
+			} else {
 				program.getScope(0).variable[name], err = program.lastScope.popExp()
 			}
 

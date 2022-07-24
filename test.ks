@@ -1,5 +1,9 @@
 function main() {
-    for $i=0; $i<10; $i=$i+1; {
-        out($i);
-    }
+    test("\"");
+}
+
+function test ($aaa) {
+    out("Enter name: ");
+
+    out("Your n\"ame is:", $aaa);
 }

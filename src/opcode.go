@@ -3,6 +3,7 @@ package karboscript
 import (
 	"errors"
 	"strconv"
+	"strings"
 )
 
 type OpCodes struct {
@@ -194,7 +195,8 @@ func parseFactor(stack *[]*Opcode, factor *Factor) {
 		} else if factor.Value.Integer != nil {
 			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil})
 		} else if factor.Value.String != nil {
-			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.String.Value}, nil})
+			stripSlash := strings.ReplaceAll(factor.Value.String.Value, "\\\"", "\"")
+			*stack = append(*stack, &Opcode{"push_exp", []any{stripSlash[1:len(stripSlash)-1]}, nil})
 		} else if factor.Value.Boolean != nil {
 			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Boolean.Value}, nil})
 		}

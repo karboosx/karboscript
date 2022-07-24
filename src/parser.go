@@ -2,6 +2,7 @@ package karboscript
 
 import (
 	"os"
+	"text/scanner"
 
 	"github.com/alecthomas/participle/v2"
 
@@ -127,7 +128,9 @@ type Expression struct {
 }
 
 var (
-	karboScriptLexer = lexer.NewTextScannerLexer(nil)
+	karboScriptLexer = lexer.NewTextScannerLexer(func(s *scanner.Scanner) {
+		s.Mode &^= scanner.ScanChars
+	})
 
 	Parser = participle.MustBuild[Code](
 		participle.Lexer(karboScriptLexer),
