@@ -1,9 +1,5 @@
 function main() {
-    test("\"");
-}
-
-function test ($aaa) {
     out("Enter name: ");
-
-    out("Your n\"ame is:", $aaa);
+    $name = readLine();
+    out("Your name is:", $name);
 }
