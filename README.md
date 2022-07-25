@@ -25,6 +25,14 @@ We have to our disposal couple of buildin functions:
 | out() | any variable... | nothing | out(1,2,3); |
 | readline() | nothing | string | name = readline(); |
 
+## Functions
+
+```c
+function <name>([type] <argument_name>, [type] <argument_name>, ...) [return_type] {
+    [body]
+}
+```
+
 ## Examples
 
 Fibonaci:
@@ -106,5 +114,16 @@ function main() {
     out("Enter name: ");
     name = readLine();
     out("Your name is:", name);
+}
+```
+
+Return type
+```c
+function main() {
+    out(test());
+}
+
+function test() string {
+    return "test";
 }
 ```
