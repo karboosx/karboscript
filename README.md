@@ -28,7 +28,7 @@ We have to our disposal couple of buildin functions:
 ## Functions
 
 ```c
-function <name>([type] <argument_name>, [type] <argument_name>, ...) [return_type] {
+function <name>(<type> <argument_name>, <type> <argument_name>, ...) [return_type] {
     [body]
 }
 ```
