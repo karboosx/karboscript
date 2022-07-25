@@ -28,7 +28,7 @@ We have to our disposal couple of buildin functions:
 ## Examples
 
 Fibonaci:
-```
+```c
 function main() {
     a = 1;
     b = 1;
@@ -44,7 +44,7 @@ function main() {
 ```
 
 while loop:
-```
+```c
 function main() {
     a = 1;
     b = 1;
@@ -63,7 +63,7 @@ function main() {
 ```
 
 If statement
-```
+```c
 function main()
 {
     if (10 == 10) {
@@ -79,7 +79,7 @@ function main()
 ```
 
 Arguments for function
-```
+```c
 function main()
 {
     out(1000 + test(800), test(500));
@@ -92,7 +92,7 @@ function test(test)
 ```
 
 For loop
-```
+```c
 function main() {
     for i=0; i<10; i=i+1; {
         out(i);
@@ -101,7 +101,7 @@ function main() {
 ```
 
 Read line from stdin
-```
+```c
 function main() {
     out("Enter name: ");
     name = readLine();
