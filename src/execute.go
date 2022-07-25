@@ -5,20 +5,30 @@ import (
 	"fmt"
 )
 
+type Call struct {
+	returnPointer int
+	returnType    *VarType
+}
+
 type Program struct {
 	Opcodes               []*Opcode
 	codePointer           *int
 	running               *bool
-	callstack             []int
+	callstack             []Call
 	functionArgsStack     []any
 	functionArgumentCount *int
 	scopes                []*Scope
 	lastScope             *Scope
 }
 
+type Var struct {
+	value   any
+	varType VarType
+}
+
 type Scope struct {
 	expresionStack []any
-	variable       map[string]any
+	variable       map[string]*Var
 	isFinal        bool
 }
 
@@ -47,7 +57,7 @@ func (scope *Scope) pushExp(value any) {
 func (program *Program) addScope() {
 	program.scopes = append(program.scopes, &Scope{
 		expresionStack: []any{},
-		variable:       map[string]any{},
+		variable:       map[string]*Var{},
 		isFinal:        false,
 	})
 }
@@ -61,7 +71,7 @@ func (program *Program) subScope() *Scope {
 	return value
 }
 
-func (program *Program) getVariable(name string) any {
+func (program *Program) getVariable(name string) *Var {
 	meetFinal := false
 	for i := 0; i < len(program.scopes)-1; i++ {
 		if meetFinal {
@@ -103,7 +113,7 @@ func Execute(stack *[]*Opcode) error {
 	killSwitch := 100000
 	codePointer := len(*stack) - 2
 	running := true
-	callstack := []int{}
+	callstack := []Call{}
 	functionArgumentCount := 0
 
 	program := Program{
@@ -161,7 +171,11 @@ func executeOpcode(program *Program) error {
 	}
 	if opcode.Operation == "push_exp_var" {
 		if name, ok := opcode.Arguments[0].(string); ok {
-			program.getScope(0).pushExp(program.getVariable(name))
+			x := program.getVariable(name)
+			if x == nil {
+				return errors.New("Undeclared variable: "+name)
+			}
+			program.getScope(0).pushExp(x.value)
 		}
 		return nil
 	}
@@ -178,13 +192,20 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "set_local_var_arg" {
-		if name, ok := opcode.Arguments[0].(string); ok {
-			varScopePosition := program.getVariableScopePosition(name)
+		if varName, ok := opcode.Arguments[0].(string); ok {
+			if name, ok := opcode.Arguments[1].(string); ok {
+				varScopePosition := program.getVariableScopePosition(name)
+				variable := Var{program.popFunctionArgument(), VarType{varName}}
 
-			if varScopePosition > -1 {
-				program.getScope(varScopePosition).variable[name] = program.popFunctionArgument()
-			} else {
-				program.getScope(0).variable[name] = program.popFunctionArgument()
+				if err, ok := validateVariable(variable); !ok {
+					return err
+				}
+
+				if varScopePosition > -1 {
+					program.getScope(varScopePosition).variable[name] = &variable
+				} else {
+					program.getScope(0).variable[name] = &variable
+				}
 			}
 		}
 
@@ -192,19 +213,47 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "set_local_var_exp" {
-		if name, ok := opcode.Arguments[0].(string); ok {
-			varScopePosition := program.getVariableScopePosition(name)
 
-			if varScopePosition > -1 {
-				program.getScope(varScopePosition).variable[name], err = program.lastScope.popExp()
+		if name, ok := opcode.Arguments[1].(string); ok {
+			var varName = "";
+
+			if varTypeFromOpcode, ok := opcode.Arguments[0].(string); ok && varTypeFromOpcode != "" {
+				varName = varTypeFromOpcode
 			} else {
-				program.getScope(0).variable[name], err = program.lastScope.popExp()
+				variableForType := program.getVariable(name)
+
+				if (variableForType != nil) {
+					varName = variableForType.varType.Value
+				} else {
+					return errors.New("Undeclared variable: "+name)
+				}
 			}
+
+			if (varName == "") {
+				return errors.New("Broken variable: "+name)
+			}
+	
+			varScopePosition := program.getVariableScopePosition(name)
+			varValue, err := program.lastScope.popExp()
 
 			if err != nil {
 				return err
 			}
+
+			variable := Var{varValue, VarType{varName}}
+
+			if err, ok := validateVariable(variable); !ok {
+				return err
+			}
+
+			if varScopePosition > -1 {
+
+				program.getScope(varScopePosition).variable[name] = &variable
+			} else {
+				program.getScope(0).variable[name] = &variable
+			}
 		}
+	
 
 		return nil
 	}
@@ -214,6 +263,15 @@ func executeOpcode(program *Program) error {
 		if err != nil {
 			return err
 		}
+
+		newCodePointer := program.callstack[len(program.callstack)-1]
+
+		if newCodePointer.returnType != nil {
+			if err, ok := validateReturnType(newCodePointer, value); !ok {
+				return err
+			}
+		}
+
 		program.getScope(1).pushExp(value)
 		return nil
 	}
@@ -297,13 +355,21 @@ func executeOpcode(program *Program) error {
 				return nil
 			}
 
-			program.callstack = append(program.callstack, *program.codePointer)
 			if count, ok := opcode.Arguments[1].(int); ok {
 				*program.functionArgumentCount = count
 			} else {
 				return errors.New("call_function needs to have number of arguments as second parameter")
 			}
 
+			var returnType *VarType
+
+			if len(opcode.Arguments) == 3 {
+				if varType, ok := opcode.Arguments[2].(string); ok {
+					returnType = &VarType{varType}
+				}
+			}
+
+			program.callstack = append(program.callstack, Call{*program.codePointer, returnType})
 			*program.codePointer, err = findLabel(program, "_function."+functionName)
 			program.addScope()
 			program.getScope(0).isFinal = true
@@ -334,12 +400,84 @@ func executeOpcode(program *Program) error {
 	if opcode.Operation == "function_return" {
 		program.subScope()
 		//todo clear functions args from stack
+
 		newCodePointer := program.callstack[len(program.callstack)-1]
 		program.callstack = program.callstack[0 : len(program.callstack)-1]
-		*program.codePointer = newCodePointer
+		*program.codePointer = newCodePointer.returnPointer
 	}
 
 	return nil
+}
+
+func validateReturnType(newCodePointer Call, value any) (error, bool) {
+
+	if newCodePointer.returnType == nil {
+		return nil, true
+	}
+
+	if newCodePointer.returnType.Value == "string" {
+		if _, ok := value.(string); ok {
+			return nil, true
+		} else {
+			return errors.New("return value is not string!"), false
+		}
+	}
+	if newCodePointer.returnType.Value == "int" {
+		if _, ok := value.(int); ok {
+			return nil, true
+		} else {
+			return errors.New("return value is not int!"), false
+		}
+	}
+	if newCodePointer.returnType.Value == "bool" {
+		if _, ok := value.(bool); ok {
+			return nil, true
+		} else {
+			return errors.New("return value is not bool!"), false
+		}
+	}
+	if newCodePointer.returnType.Value == "float" {
+		if _, ok := value.(float64); ok {
+			return nil, true
+		} else {
+			return errors.New("return value is not float!"), false
+		}
+	}
+
+	return errors.New("cant validate return value!"), false
+}
+
+func validateVariable(variable Var) (error, bool) {
+	if variable.varType.Value == "string" {
+		if _, ok := variable.value.(string); ok {
+			return nil, true
+		} else {
+			return errors.New("variable is not string!"), false
+		}
+	}
+	if variable.varType.Value == "int" {
+		if _, ok := variable.value.(int); ok {
+			return nil, true
+		} else {
+			return errors.New("variable is not int!"), false
+		}
+	}
+	if variable.varType.Value == "bool" {
+		if _, ok := variable.value.(bool); ok {
+			return nil, true
+		} else {
+			return errors.New("variable is not bool!"), false
+		}
+	}
+	if variable.varType.Value == "float" {
+		if _, ok := variable.value.(float64); ok {
+			return nil, true
+		} else {
+			return errors.New("variable is not float!"), false
+		}
+	}
+
+	return errors.New("cant validate variable!"), false
 }
 
 func mathOperation(program *Program, opcode *Opcode) error {

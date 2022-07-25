@@ -24,227 +24,265 @@ func (m *ParseError) Error() string {
 	return m.Message
 }
 
-func parseFunctionBody(stack *[]*Opcode, function *Function) error {
-	parseBody(stack, function.Body)
-	if (*stack)[len(*stack)-1].Operation != "function_return" {
-		*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
+type ParsedCode struct {
+	functions   map[string]Function
+	stack       *[]*Opcode
+	parsedError error
+}
+
+func (parsed *ParsedCode) append(opcode *Opcode) {
+	*(*parsed).stack = append(*(*parsed).stack, opcode)
+}
+
+func parseFunctionBody(parsed *ParsedCode, function *Function) error {
+	parseBody(parsed, function.Body)
+	if (*(*parsed).stack)[len(*(*parsed).stack)-1].Operation != "function_return" {
+		parsed.append(&Opcode{"function_return", []any{}, nil})
 	}
 	return nil
 }
 
-func parseBody(stack *[]*Opcode, statements []*Statement) error {
+func parseBody(parsed *ParsedCode, statements []*Statement) error {
 	for _, statement := range statements {
-		parseStatement(stack, statement)
+		parseStatement(parsed, statement)
 	}
 
 	return nil
 }
 
-func parseStatement(stack *[]*Opcode, statement *Statement) {
+func parseStatement(parsed *ParsedCode, statement *Statement) {
 	if statement.FunctionCall != nil {
-		parseFunctionCall(stack, statement.FunctionCall)
+		parseFunctionCall(parsed, statement.FunctionCall)
 	}
 	if statement.Expression != nil {
-		parseExpresionWithNewScope(stack, statement.Expression)
+		parseExpresionWithNewScope(parsed, statement.Expression)
 	}
 	if statement.ReturnStmt != nil {
-		parseReturnStmt(stack, statement.ReturnStmt)
+		parseReturnStmt(parsed, statement.ReturnStmt)
 	}
 	if statement.Assigment != nil {
-		parseAssigment(stack, statement.Assigment)
+		parseAssigment(parsed, statement.Assigment)
 	}
 	if statement.If != nil {
-		parseIf(stack, statement.If)
+		parseIf(parsed, statement.If)
 	}
 	if statement.While != nil {
-		parseWhile(stack, statement.While)
+		parseWhile(parsed, statement.While)
 	}
 	if statement.For != nil {
-		parseFor(stack, statement.For)
+		parseFor(parsed, statement.For)
 	}
 }
 
-func parseWhile(stack *[]*Opcode, while *While) {
-	labelBeforeExpresion := newLabel(stack, "while")
-	*stack = append(*stack, &Opcode{"while_start", []any{}, &labelBeforeExpresion})
+func parseWhile(parsed *ParsedCode, while *While) {
+	labelBeforeExpresion := newLabel(parsed, "while")
+	parsed.append(&Opcode{"while_start", []any{}, &labelBeforeExpresion})
 
-	parseExpresionWithNewScope(stack, &while.Condition)
+	parseExpresionWithNewScope(parsed, &while.Condition)
 
-	label := newLabel(stack, "while")
+	label := newLabel(parsed, "while")
 
-	*stack = append(*stack, &Opcode{"while", []any{"last_pop_exp", label}, nil})
-	parseBody(stack, while.Body)
-	*stack = append(*stack, &Opcode{"jmp", []any{labelBeforeExpresion}, nil})
+	parsed.append(&Opcode{"while", []any{"last_pop_exp", label}, nil})
+	parseBody(parsed, while.Body)
+	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil})
 
-	*stack = append(*stack, &Opcode{"while_else", []any{}, &label})
+	parsed.append(&Opcode{"while_else", []any{}, &label})
 }
 
-func parseFor(stack *[]*Opcode, forStmt *For) {
-	parseStatement(stack, &forStmt.Init)
+func parseFor(parsed *ParsedCode, forStmt *For) {
+	parseStatement(parsed, &forStmt.Init)
 
-	labelBeforeExpresion := newLabel(stack, "for")
-	*stack = append(*stack, &Opcode{"for_start", []any{}, &labelBeforeExpresion})
+	labelBeforeExpresion := newLabel(parsed, "for")
+	parsed.append(&Opcode{"for_start", []any{}, &labelBeforeExpresion})
 
-	parseExpresionWithNewScope(stack, &forStmt.Condition)
+	parseExpresionWithNewScope(parsed, &forStmt.Condition)
 
-	label := newLabel(stack, "for")
+	label := newLabel(parsed, "for")
 
-	*stack = append(*stack, &Opcode{"for", []any{"last_pop_exp", label}, nil})
-	parseBody(stack, forStmt.Body)
-	parseStatement(stack, &forStmt.Increment)
+	parsed.append(&Opcode{"for", []any{"last_pop_exp", label}, nil})
+	parseBody(parsed, forStmt.Body)
+	parseStatement(parsed, &forStmt.Increment)
 
-	*stack = append(*stack, &Opcode{"jmp", []any{labelBeforeExpresion}, nil})
+	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil})
 
-	*stack = append(*stack, &Opcode{"for_else", []any{}, &label})
+	parsed.append(&Opcode{"for_else", []any{}, &label})
 }
 
-func newLabel(stack *[]*Opcode, labelType string) string {
-	lenStack := len(*stack)
+func newLabel(parsed *ParsedCode, labelType string) string {
+	lenStack := len(*(*parsed).stack)
 	label := "_" + labelType + "." + strconv.FormatInt(int64(lenStack), 16)
 	return label
 }
 
-func parseIf(stack *[]*Opcode, ifStmt *If) {
-	parseExpresionWithNewScope(stack, &ifStmt.Condition)
+func parseIf(parsed *ParsedCode, ifStmt *If) {
+	parseExpresionWithNewScope(parsed, &ifStmt.Condition)
 
-	lenStack := len(*stack)
+	lenStack := len(*(*parsed).stack)
 	label := "_if." + strconv.FormatInt(int64(lenStack), 16)
 
-	*stack = append(*stack, &Opcode{"if", []any{"last_pop_exp", label}, nil})
-	parseBody(stack, ifStmt.Body)
+	parsed.append(&Opcode{"if", []any{"last_pop_exp", label}, nil})
+	parseBody(parsed, ifStmt.Body)
 
-	*stack = append(*stack, &Opcode{"if_else", []any{}, &label})
-
-}
-
-func parseAssigment(stack *[]*Opcode, assigment *Assigment) {
-	parseExpresionWithNewScope(stack, &assigment.Expression)
-	*stack = append(*stack, &Opcode{"set_local_var_exp", []any{assigment.Variable.Value, "last_pop_exp"}, nil})
+	parsed.append(&Opcode{"if_else", []any{}, &label})
 
 }
 
-func parseFunctionCall(stack *[]*Opcode, functionCall *FunctionCall) {
+func parseAssigment(parsed *ParsedCode, assigment *Assigment) {
+	parseExpresionWithNewScope(parsed, &assigment.Expression)
+	parsed.append(&Opcode{"set_local_var_exp", []any{assigment.VarType.Value, assigment.Variable.Value, "last_pop_exp"}, nil})
+}
+
+func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {
 	// todo check function declaration before making opcodes (like checking types of called function and numer of arguments)
 	for _, argument := range functionCall.Arguments {
-		parseExpresionWithNewScope(stack, argument)
-		*stack = append(*stack, &Opcode{"push_function_arg", []any{"pop_exp"}, nil})
+		parseExpresionWithNewScope(parsed, argument)
+		parsed.append(&Opcode{"push_function_arg", []any{"pop_exp"}, nil})
 	}
-	*stack = append(*stack, &Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
+
+	if function, ok := parsed.functions[functionCall.FunctionName]; ok {
+		if function.ReturnType != nil {
+			parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments), function.ReturnType.Value}, nil})
+			return;
+		} else {
+			parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
+			return;
+		}
+	}
+	
+	if _, ok := buildInFunctions[functionCall.FunctionName]; ok {
+		parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
+		
+	}else {
+		parsed.parsedError = errors.New("Can't find " + functionCall.FunctionName + " function!")
+	}
 }
 
-func parseReturnStmt(stack *[]*Opcode, returnStmt *ReturnStmt) {
-	parseExpresionWithNewScope(stack, &returnStmt.Expression)
-	*stack = append(*stack, &Opcode{"push_bellow", []any{"last_pop_exp"}, nil})
-	*stack = append(*stack, &Opcode{"function_return", []any{}, nil})
+func parseReturnStmt(parsed *ParsedCode, returnStmt *ReturnStmt) {
+	parseExpresionWithNewScope(parsed, &returnStmt.Expression)
+	parsed.append(&Opcode{"push_bellow", []any{"last_pop_exp"}, nil})
+	parsed.append(&Opcode{"function_return", []any{}, nil})
 }
 
-func parseExpresionWithNewScope(stack *[]*Opcode, expression *Expression) {
-	*stack = append(*stack, &Opcode{"add_scope", []any{}, nil})
-	parseExpresion(stack, expression)
-	*stack = append(*stack, &Opcode{"sub_scope", []any{}, nil})
+func parseExpresionWithNewScope(parsed *ParsedCode, expression *Expression) {
+	parsed.append(&Opcode{"add_scope", []any{}, nil})
+	parseExpresion(parsed, expression)
+	parsed.append(&Opcode{"sub_scope", []any{}, nil})
 }
 
-func parseExpresion(stack *[]*Opcode, expression *Expression) {
-	parseComTerm(stack, expression.Left)
-	parseRightComExpresion(stack, expression.Right)
+func parseExpresion(parsed *ParsedCode, expression *Expression) {
+	parseComTerm(parsed, expression.Left)
+	parseRightComExpresion(parsed, expression.Right)
 }
 
-func parseRightComExpresion(stack *[]*Opcode, opComTerm []*OpComTerm) {
+func parseRightComExpresion(parsed *ParsedCode, opComTerm []*OpComTerm) {
 	for _, opTerm := range opComTerm {
-		parseComTerm(stack, opTerm.Term)
-		*stack = append(*stack, &Opcode{"exp_call", []any{opTerm.Operator}, nil})
+		parseComTerm(parsed, opTerm.Term)
+		parsed.append(&Opcode{"exp_call", []any{opTerm.Operator}, nil})
 	}
 }
 
-func parseComTerm(stack *[]*Opcode, comTerm *ComTerm) {
-	parseLeftTerm(stack, comTerm.Left)
-	parseRightTerm(stack, comTerm.Right)
+func parseComTerm(parsed *ParsedCode, comTerm *ComTerm) {
+	parseLeftTerm(parsed, comTerm.Left)
+	parseRightTerm(parsed, comTerm.Right)
 }
 
-func parseRightTerm(stack *[]*Opcode, opTerm []*OpTerm) {
-	parseOpTerm(stack, opTerm)
+func parseRightTerm(parsed *ParsedCode, opTerm []*OpTerm) {
+	parseOpTerm(parsed, opTerm)
 }
 
-func parseOpTerm(stack *[]*Opcode, opTerms []*OpTerm) {
+func parseOpTerm(parsed *ParsedCode, opTerms []*OpTerm) {
 	for _, opTerm := range opTerms {
-		parseTerm(stack, opTerm.Term)
-		*stack = append(*stack, &Opcode{"exp_call", []any{opTerm.Operator}, nil})
+		parseTerm(parsed, opTerm.Term)
+		parsed.append(&Opcode{"exp_call", []any{opTerm.Operator}, nil})
 	}
 }
 
-func parseLeftTerm(stack *[]*Opcode, term *Term) {
-	parseTerm(stack, term)
+func parseLeftTerm(parsed *ParsedCode, term *Term) {
+	parseTerm(parsed, term)
 }
 
-func parseTerm(stack *[]*Opcode, term *Term) {
-	parseFactor(stack, term.Left)
-	parseOpFactor(stack, term.Right)
+func parseTerm(parsed *ParsedCode, term *Term) {
+	parseFactor(parsed, term.Left)
+	parseOpFactor(parsed, term.Right)
 }
 
-func parseOpFactor(stack *[]*Opcode, opFactors []*OpFactor) {
+func parseOpFactor(parsed *ParsedCode, opFactors []*OpFactor) {
 	for _, opFactor := range opFactors {
-		parseFactor(stack, opFactor.Factor)
-		*stack = append(*stack, &Opcode{"exp_call", []any{opFactor.Operator}, nil})
+		parseFactor(parsed, opFactor.Factor)
+		parsed.append(&Opcode{"exp_call", []any{opFactor.Operator}, nil})
 	}
 }
 
-func parseFactor(stack *[]*Opcode, factor *Factor) {
+func parseFactor(parsed *ParsedCode, factor *Factor) {
 	if factor.Value != nil {
 		if factor.Value.Float != nil {
-			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Float.Value}, nil})
+			parsed.append(&Opcode{"push_exp", []any{factor.Value.Float.Value}, nil})
 		} else if factor.Value.Integer != nil {
-			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil})
+			parsed.append(&Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil})
 		} else if factor.Value.String != nil {
 			stripSlash := strings.ReplaceAll(factor.Value.String.Value, "\\\"", "\"")
-			*stack = append(*stack, &Opcode{"push_exp", []any{stripSlash[1:len(stripSlash)-1]}, nil})
+			parsed.append(&Opcode{"push_exp", []any{stripSlash[1 : len(stripSlash)-1]}, nil})
 		} else if factor.Value.Boolean != nil {
-			*stack = append(*stack, &Opcode{"push_exp", []any{factor.Value.Boolean.Value}, nil})
+			parsed.append(&Opcode{"push_exp", []any{factor.Value.Boolean.Value}, nil})
 		}
 	}
 	if factor.FunctionCall != nil {
-		parseFunctionCall(stack, factor.FunctionCall)
+		parseFunctionCall(parsed, factor.FunctionCall)
 	}
 	if factor.Variable != nil {
-		*stack = append(*stack, &Opcode{"push_exp_var", []any{factor.Variable.Value}, nil})
+		parsed.append(&Opcode{"push_exp_var", []any{factor.Variable.Value}, nil})
 	}
 	if factor.Subexpression != nil {
-		parseExpresion(stack, factor.Subexpression)
+		parseExpresion(parsed, factor.Subexpression)
 	}
 }
 
-func parseFunction(stack *[]*Opcode, function *Function) error {
+func parseFunction(parsed *ParsedCode, function *Function) error {
 	label := "_function." + function.Name
 
-	for _, OpCode := range *stack {
+	for _, OpCode := range *(*parsed).stack {
 		if OpCode.Label != nil && *OpCode.Label == label {
 			return errors.New("function " + function.Name + " is already declared")
 		}
 	}
 
-	*stack = append(*stack, &Opcode{"function", []any{}, &label})
+	*(*parsed).stack = append(*(*parsed).stack, &Opcode{"function", []any{}, &label})
 
 	for _, argument := range function.Arguments {
-		*stack = append(*stack, &Opcode{"set_local_var_arg", []any{argument.Variable.Value,}, nil})
+		*(*parsed).stack = append(*(*parsed).stack, &Opcode{"set_local_var_arg", []any{argument.VarType.Value, argument.Variable.Value}, nil})
 	}
 
-	err := parseFunctionBody(stack, function)
+	err := parseFunctionBody(parsed, function)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+func registerFunction(parsed *ParsedCode, function *Function) {
+	parsed.functions[function.Name] = *function
+}
+
 func GetOpcodes(code *Code) ([]*Opcode, error) {
+	parsed := ParsedCode{map[string]Function{}, &[]*Opcode{}, nil}
+
 	var opcodes []*Opcode
 
 	for _, function := range code.Functions {
-		err := parseFunction(&opcodes, function)
+		registerFunction(&parsed, function)
+	}
+
+	for _, function := range code.Functions {
+		err := parseFunction(&parsed, function)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	opcodes = append(opcodes, &Opcode{"call_function", []any{"main", 0}, nil}, &Opcode{"exit", []any{"main", 0}, nil})
+	if (parsed.parsedError != nil) {
+		return opcodes, parsed.parsedError;
+	}
+	opcodes = append(*parsed.stack, &Opcode{"call_function", []any{"main", 0}, nil}, &Opcode{"exit", []any{"main", 0}, nil})
 
 	return opcodes, nil
 }

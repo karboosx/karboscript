@@ -30,8 +30,8 @@ We have to our disposal couple of buildin functions:
 Fibonaci:
 ```c
 function main() {
-    a = 1;
-    b = 1;
+    int a = 1;
+    int b = 1;
 
     while (b < 500) {
 
@@ -46,13 +46,13 @@ function main() {
 while loop:
 ```c
 function main() {
-    a = 1;
-    b = 1;
+    int a = 1;
+    int b = 1;
 
     while (a < 5) {
         b = 1;
         while (b < 5) {
-            test ("test", b);
+            out ("test", b);
             b=b+1;
         }
 
@@ -85,7 +85,7 @@ function main()
     out(1000 + test(800), test(500));
 }
 
-function test(test)
+function test(int test)
 {
     return test + 200;
 }
@@ -94,7 +94,7 @@ function test(test)
 For loop
 ```c
 function main() {
-    for i=0; i<10; i=i+1; {
+    for int i=0; i<10; i=i+1; {
         out(i);
     }
 }

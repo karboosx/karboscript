@@ -14,9 +14,10 @@ type Code struct {
 }
 
 type Function struct {
-	Name      string       `"function" @Ident "("`
-	Arguments []*Argument  ` [@@ ("," @@)*] ")"`
-	Body      []*Statement `"{" @@* "}"`
+	Name       string       `"function" @Ident "("`
+	Arguments  []*Argument  ` [@@ ("," @@)*] ")"`
+	ReturnType *VarType      `@@?`
+	Body       []*Statement `"{" @@* "}"`
 }
 
 type Statement struct {
@@ -28,8 +29,12 @@ type Statement struct {
 	FunctionCall *FunctionCall `| @@`
 	Expression   *Expression   `| @@) ";"`
 }
+type VarType struct {
+	Value string `@("string"| "int" | "float" | "bool")`
+}
 
 type Assigment struct {
+	VarType    VarType    `@@?`
 	Variable   Variable   `@@`
 	Expression Expression `"=" @@`
 }
@@ -60,6 +65,7 @@ type For struct {
 }
 
 type Argument struct {
+	VarType  VarType  `@@`
 	Variable Variable `@@`
 }
 
@@ -98,8 +104,8 @@ type Factor struct {
 }
 
 type OpFactor struct {
-	Operator string `@("*" | "/")`
-	Factor   *Factor  `@@`
+	Operator string  `@("*" | "/")`
+	Factor   *Factor `@@`
 }
 
 type Term struct {
@@ -109,7 +115,7 @@ type Term struct {
 
 type OpTerm struct {
 	Operator string `@("+" | "-")`
-	Term     *Term    `@@`
+	Term     *Term  `@@`
 }
 
 type ComTerm struct {
@@ -118,7 +124,7 @@ type ComTerm struct {
 }
 
 type OpComTerm struct {
-	Operator string `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
+	Operator string   `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
 	Term     *ComTerm `@@`
 }
 

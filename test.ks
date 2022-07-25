@@ -1,9 +1,7 @@
+
+
 function main() {
     out("Enter name: ");
-    name = test();
+    string name = readLine();
     out("Your name is:", name);
-}
-
-function test() {
-    return readLine();
 }
