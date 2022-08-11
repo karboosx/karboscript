@@ -15,6 +15,17 @@ function main() {
 
 This is the starting point of every script.
 
+## Usage
+
+Execute `script.ks` file
+```
+# ./karboscript script.ks
+```
+
+Show opcodes for `script.ks` file
+```
+# ./karboscript --opcode script.ks
+```
 
 ## Buildin functions
 
@@ -23,7 +34,7 @@ We have to our disposal couple of buildin functions:
 | function name | arguments | return | example |
 |---------------|-----------|--------|---------|
 | out() | any variable... | nothing | out(1,2,3); |
-| readline() | nothing | string | name = readline(); |
+| readLine() | nothing | string | name = readLine(); |
 
 ## Functions
 
@@ -103,6 +114,15 @@ For loop
 ```c
 function main() {
     for int i=0; i<10; i=i+1; {
+        out(i);
+    }
+}
+```
+
+For increment (loop from one expresion to another with interval of 1)
+```c
+function main() {
+    from 0 to 10 as i {
         out(i);
     }
 }

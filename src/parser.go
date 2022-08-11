@@ -16,13 +16,14 @@ type Code struct {
 type Function struct {
 	Name       string       `"function" @Ident "("`
 	Arguments  []*Argument  ` [@@ ("," @@)*] ")"`
-	ReturnType *VarType      `@@?`
+	ReturnType *VarType     `@@?`
 	Body       []*Statement `"{" @@* "}"`
 }
 
 type Statement struct {
 	If           *If           `(@@ `
 	For          *For          `| @@ `
+	ForInc       *ForInc       `| @@ `
 	While        *While        `| @@ ) | `
 	ReturnStmt   *ReturnStmt   `( @@ `
 	Assigment    *Assigment    `| @@ `
@@ -62,6 +63,13 @@ type For struct {
 	Condition Expression   `@@ ";"`
 	Increment Statement    `@@ ")"?`
 	Body      []*Statement `"{" @@* "}"`
+}
+
+type ForInc struct {
+	ExpressionA Expression   `"from" @@`
+	ExpressionB Expression   `"to" @@`
+	Variable    Variable     `"as" @@`
+	Body        []*Statement `"{" @@* "}"`
 }
 
 type Argument struct {

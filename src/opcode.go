@@ -72,6 +72,9 @@ func parseStatement(parsed *ParsedCode, statement *Statement) {
 	if statement.For != nil {
 		parseFor(parsed, statement.For)
 	}
+	if statement.ForInc != nil {
+		parseForInc(parsed, statement.ForInc)
+	}
 }
 
 func parseWhile(parsed *ParsedCode, while *While) {
@@ -105,7 +108,27 @@ func parseFor(parsed *ParsedCode, forStmt *For) {
 
 	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil})
 
-	parsed.append(&Opcode{"for_else", []any{}, &label})
+	parsed.append(&Opcode{"for_end", []any{}, &label})
+}
+
+func parseForInc(parsed *ParsedCode, forStmt *ForInc) {
+	parseExpresionWithNewScope(parsed, &forStmt.ExpressionA)
+
+	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value, "last_pop_exp"}, nil})
+	
+	parseExpresionWithNewScope(parsed, &forStmt.ExpressionB)
+
+	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value+"_end", "last_pop_exp"}, nil})
+
+	incLabelStart := newLabel(parsed, "forinc")
+	incLabelEnd := newLabel(parsed, "forinc_e")
+	parsed.append(&Opcode{"forinc_start", []any{forStmt.Variable.Value, incLabelEnd}, &incLabelStart})
+
+	parseBody(parsed, forStmt.Body)
+
+	parsed.append(&Opcode{"forinc", []any{forStmt.Variable.Value, incLabelStart}, nil})
+
+	parsed.append(&Opcode{"forinc_end", []any{}, &incLabelEnd})
 }
 
 func newLabel(parsed *ParsedCode, labelType string) string {
@@ -136,7 +159,7 @@ func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {
 	// todo check function declaration before making opcodes (like checking types of called function and numer of arguments)
 	for _, argument := range functionCall.Arguments {
 		parseExpresionWithNewScope(parsed, argument)
-		parsed.append(&Opcode{"push_function_arg", []any{"pop_exp"}, nil})
+		parsed.append(&Opcode{"push_function_arg", []any{"last_pop_exp"}, nil})
 	}
 
 	if function, ok := parsed.functions[functionCall.FunctionName]; ok {

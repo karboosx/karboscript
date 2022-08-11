@@ -173,7 +173,7 @@ func executeOpcode(program *Program) error {
 		if name, ok := opcode.Arguments[0].(string); ok {
 			x := program.getVariable(name)
 			if x == nil {
-				return errors.New("Undeclared variable: "+name)
+				return errors.New("Undeclared variable: " + name)
 			}
 			program.getScope(0).pushExp(x.value)
 		}
@@ -215,24 +215,24 @@ func executeOpcode(program *Program) error {
 	if opcode.Operation == "set_local_var_exp" {
 
 		if name, ok := opcode.Arguments[1].(string); ok {
-			var varName = "";
+			var varName = ""
 
 			if varTypeFromOpcode, ok := opcode.Arguments[0].(string); ok && varTypeFromOpcode != "" {
 				varName = varTypeFromOpcode
 			} else {
 				variableForType := program.getVariable(name)
 
-				if (variableForType != nil) {
+				if variableForType != nil {
 					varName = variableForType.varType.Value
 				} else {
-					return errors.New("Undeclared variable: "+name)
+					return errors.New("Undeclared variable: " + name)
 				}
 			}
 
-			if (varName == "") {
-				return errors.New("Broken variable: "+name)
+			if varName == "" {
+				return errors.New("Broken variable: " + name)
 			}
-	
+
 			varScopePosition := program.getVariableScopePosition(name)
 			varValue, err := program.lastScope.popExp()
 
@@ -253,7 +253,6 @@ func executeOpcode(program *Program) error {
 				program.getScope(0).variable[name] = &variable
 			}
 		}
-	
 
 		return nil
 	}
@@ -339,6 +338,76 @@ func executeOpcode(program *Program) error {
 		return nil
 	}
 
+	if opcode.Operation == "forinc_start" {
+		if variable, ok := opcode.Arguments[0].(string); ok {
+			val := program.getVariable(variable)
+
+			if val == nil {
+				return errors.New("forint use uninitalized variable!")
+			}
+
+			valEnd := program.getVariable(variable + "_end")
+
+			if val == nil {
+				return errors.New("forint use uninitalized variable!")
+			}
+			if a, ok := val.value.(int); ok {
+				if b, ok := valEnd.value.(int); ok {
+					if a==b {
+						if label, ok := opcode.Arguments[1].(string); ok {
+							*program.codePointer, err = findLabel(program, label)
+							if err != nil {
+								return err
+							}
+						}
+					}
+				}
+			}
+
+			return nil
+		} else {
+			return errors.New("??")
+		}
+	}
+
+	if opcode.Operation == "forinc" {
+		if variable, ok := opcode.Arguments[0].(string); ok {
+			val := program.getVariable(variable)
+
+			if val == nil {
+				return errors.New("forint use uninitalized variable!")
+			}
+
+			valEnd := program.getVariable(variable + "_end")
+
+			if val == nil {
+				return errors.New("forint use uninitalized variable!")
+			}
+
+			if a, ok := val.value.(int); ok {
+				if b, ok := valEnd.value.(int); ok {
+					if a < b {
+						val.value = a + 1
+					}
+					if a > b {
+						val.value = a - 1
+					}
+				}
+			}
+
+			if label, ok := opcode.Arguments[1].(string); ok {
+				*program.codePointer, err = findLabel(program, label)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		} else {
+			return errors.New("??")
+		}
+	}
+
 	if opcode.Operation == "call_function" {
 		if functionName, ok := opcode.Arguments[0].(string); ok {
 			if val, ok := buildInFunctions[functionName]; ok {
@@ -384,7 +453,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_function_arg" {
-		if opcode.Arguments[0] == "pop_exp" {
+		if opcode.Arguments[0] == "last_pop_exp" {
 			x, error := (*program).lastScope.popExp()
 			if error != nil {
 				return error

@@ -160,3 +160,25 @@ func ExampleForTest() {
 	// 8
 	// 9
 }
+
+func ExampleForIncTest() {
+	ast, err := karboscript.ParseString("function main() {    from 0 to 10 as i {        out(i);    }}")
+	
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 0
+	// 1
+	// 2
+	// 3
+	// 4
+	// 5
+	// 6
+	// 7
+	// 8
+	// 9
+}
