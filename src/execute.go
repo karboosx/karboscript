@@ -291,7 +291,7 @@ func executeOpcode(program *Program) error {
 		}
 
 		if val, ok := lastVal.(bool); ok {
-			if label, ok := opcode.Arguments[1].(string); ok {
+			if label, ok := opcode.Arguments[0].(string); ok {
 				if !val {
 					*program.codePointer, err = findLabel(program, label)
 				}
@@ -324,7 +324,7 @@ func executeOpcode(program *Program) error {
 		}
 
 		if val, ok := lastVal.(bool); ok {
-			if label, ok := opcode.Arguments[1].(string); ok {
+			if label, ok := opcode.Arguments[0].(string); ok {
 				if !val {
 					*program.codePointer, err = findLabel(program, label)
 					if err != nil {
@@ -453,17 +453,11 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_function_arg" {
-		if opcode.Arguments[0] == "last_pop_exp" {
-			x, error := (*program).lastScope.popExp()
-			if error != nil {
-				return error
-			}
-			program.functionArgsStack = append(program.functionArgsStack, x)
-			//program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
-
-		} else {
-			program.functionArgsStack = append(program.functionArgsStack, opcode.Arguments...)
+		x, error := (*program).lastScope.popExp()
+		if error != nil {
+			return error
 		}
+		program.functionArgsStack = append(program.functionArgsStack, x)
 	}
 
 	if opcode.Operation == "function_return" {

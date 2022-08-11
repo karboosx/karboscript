@@ -36,12 +36,48 @@ We have to our disposal couple of buildin functions:
 | out() | any variable... | nothing | out(1,2,3); |
 | readLine() | nothing | string | name = readLine(); |
 
-## Functions
+## Syntax
+
+# Declare function
 
 ```c
 function <name>(<type> <argument_name>, ...) [return_type] {
     [body]
 }
+```
+
+# Declare variable
+```c
+<type> <var_name> = <expression>;
+```
+For example: `string test = "hello world";`
+
+# Call function
+```c
+<function_name>(<argument>, ...);
+```
+For example: `func(1, 2, 3, variable);`
+
+# Loops
+While
+```c
+    while (<expresion>) {
+        [body]
+    }
+```
+
+For
+```c
+    for <init_statement>; <compare_expresion>; <inrement_statement>; {
+        [body]
+    }
+```
+
+From to
+```c
+    from <starting_value_expresion> to <ending_value_expresion> as <variable_name>; {
+        [body]
+    }
 ```
 
 ## Examples

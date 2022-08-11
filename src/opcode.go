@@ -85,7 +85,7 @@ func parseWhile(parsed *ParsedCode, while *While) {
 
 	label := newLabel(parsed, "while")
 
-	parsed.append(&Opcode{"while", []any{"last_pop_exp", label}, nil})
+	parsed.append(&Opcode{"while", []any{label}, nil})
 	parseBody(parsed, while.Body)
 	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil})
 
@@ -102,7 +102,7 @@ func parseFor(parsed *ParsedCode, forStmt *For) {
 
 	label := newLabel(parsed, "for")
 
-	parsed.append(&Opcode{"for", []any{"last_pop_exp", label}, nil})
+	parsed.append(&Opcode{"for", []any{label}, nil})
 	parseBody(parsed, forStmt.Body)
 	parseStatement(parsed, &forStmt.Increment)
 
@@ -114,11 +114,11 @@ func parseFor(parsed *ParsedCode, forStmt *For) {
 func parseForInc(parsed *ParsedCode, forStmt *ForInc) {
 	parseExpresionWithNewScope(parsed, &forStmt.ExpressionA)
 
-	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value, "last_pop_exp"}, nil})
+	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value}, nil})
 	
 	parseExpresionWithNewScope(parsed, &forStmt.ExpressionB)
 
-	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value+"_end", "last_pop_exp"}, nil})
+	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value+"_end"}, nil})
 
 	incLabelStart := newLabel(parsed, "forinc")
 	incLabelEnd := newLabel(parsed, "forinc_e")
@@ -143,7 +143,7 @@ func parseIf(parsed *ParsedCode, ifStmt *If) {
 	lenStack := len(*(*parsed).stack)
 	label := "_if." + strconv.FormatInt(int64(lenStack), 16)
 
-	parsed.append(&Opcode{"if", []any{"last_pop_exp", label}, nil})
+	parsed.append(&Opcode{"if", []any{label}, nil})
 	parseBody(parsed, ifStmt.Body)
 
 	parsed.append(&Opcode{"if_else", []any{}, &label})
@@ -152,14 +152,14 @@ func parseIf(parsed *ParsedCode, ifStmt *If) {
 
 func parseAssigment(parsed *ParsedCode, assigment *Assigment) {
 	parseExpresionWithNewScope(parsed, &assigment.Expression)
-	parsed.append(&Opcode{"set_local_var_exp", []any{assigment.VarType.Value, assigment.Variable.Value, "last_pop_exp"}, nil})
+	parsed.append(&Opcode{"set_local_var_exp", []any{assigment.VarType.Value, assigment.Variable.Value}, nil})
 }
 
 func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {
 	// todo check function declaration before making opcodes (like checking types of called function and numer of arguments)
 	for _, argument := range functionCall.Arguments {
 		parseExpresionWithNewScope(parsed, argument)
-		parsed.append(&Opcode{"push_function_arg", []any{"last_pop_exp"}, nil})
+		parsed.append(&Opcode{"push_function_arg", []any{}, nil})
 	}
 
 	if function, ok := parsed.functions[functionCall.FunctionName]; ok {
@@ -182,7 +182,7 @@ func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {
 
 func parseReturnStmt(parsed *ParsedCode, returnStmt *ReturnStmt) {
 	parseExpresionWithNewScope(parsed, &returnStmt.Expression)
-	parsed.append(&Opcode{"push_bellow", []any{"last_pop_exp"}, nil})
+	parsed.append(&Opcode{"push_bellow", []any{}, nil})
 	parsed.append(&Opcode{"function_return", []any{}, nil})
 }
 
