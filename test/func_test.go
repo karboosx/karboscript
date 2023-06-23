@@ -15,10 +15,9 @@ func ExampleFuncTest() {
 	// 12 55
 }
 
-
 func ExampleExpresionTest() {
 	ast, _ := karboscript.ParseString("function main() { out(12 + 14); }")
-	
+
 	opcodes, _ := karboscript.GetOpcodes(ast)
 	_ = karboscript.Execute(&opcodes)
 
@@ -28,7 +27,7 @@ func ExampleExpresionTest() {
 
 func ExampleExpresionWithFuncTest() {
 	ast, err := karboscript.ParseString("function main() { out(1000 + test() * 2 + 22); } function test() { return 100;}")
-	
+
 	if err != nil {
 	}
 
@@ -40,7 +39,7 @@ func ExampleExpresionWithFuncTest() {
 }
 func ExampleFuncWithArgTest() {
 	ast, err := karboscript.ParseString("function main() { out(1000 + test(123) * 2 + 22, test(123)); } function test(int test) { return test + 200;}")
-	
+
 	if err != nil {
 	}
 
@@ -52,7 +51,7 @@ func ExampleFuncWithArgTest() {
 }
 func ExampleCompareTest() {
 	ast, err := karboscript.ParseString("function main() { out(12 > 10, 10 == 10, 30 == 10, 10 != 10); }")
-	
+
 	if err != nil {
 	}
 
@@ -64,7 +63,7 @@ func ExampleCompareTest() {
 }
 func ExampleLocalVarTest() {
 	ast, err := karboscript.ParseString("function test() { int a = 100; int aaa = 12 + a; return aaa;} function main() { out(test());}	")
-	
+
 	if err != nil {
 	}
 
@@ -76,7 +75,7 @@ func ExampleLocalVarTest() {
 }
 func ExampleLocalVarKeepsLocalScopeTest() {
 	ast, err := karboscript.ParseString("function test() { out(a); }function main() { int a = 10; test();}	")
-	
+
 	if err != nil {
 	}
 
@@ -84,14 +83,14 @@ func ExampleLocalVarKeepsLocalScopeTest() {
 	err = karboscript.Execute(&opcodes)
 
 	fmt.Println(err)
-		
+
 	// Output:
-	// Undeclared variable: a
+	// 1:23: Undeclared variable: a
 }
 
 func ExampleIfTest() {
 	ast, err := karboscript.ParseString("function main() {    if (10 == 10) {        out(\"10 == 10\");    }    if (500 < 200) {        out(\"500 < 200\");    }    if (12 > 10) {        out(\"12 > 10\");    }}	")
-	
+
 	if err != nil {
 	}
 
@@ -104,7 +103,7 @@ func ExampleIfTest() {
 }
 func ExampleWhileTest() {
 	ast, err := karboscript.ParseString("function main() {    int a = 0;    while (a < 10) {        out (a);        a = a + 1;    }}")
-	
+
 	if err != nil {
 	}
 
@@ -126,7 +125,7 @@ func ExampleWhileTest() {
 
 func ExampleDoubleWhileTest() {
 	ast, err := karboscript.ParseString("function main() {    int a = 1;    int b = 1;    while (a < 3) {        b = 1;        while (b < 3) {            out (a, b);            b=b+1;        }        a=a+1;    }}")
-	
+
 	if err != nil {
 	}
 
@@ -141,7 +140,7 @@ func ExampleDoubleWhileTest() {
 }
 func ExampleForTest() {
 	ast, err := karboscript.ParseString("function main() {    for int i=0; i<10; i=i+1; {        out(i);    }}")
-	
+
 	if err != nil {
 	}
 
@@ -163,7 +162,7 @@ func ExampleForTest() {
 
 func ExampleForIncTest() {
 	ast, err := karboscript.ParseString("function main() {    from 0 to 10 as i {        out(i);    }}")
-	
+
 	if err != nil {
 	}
 
