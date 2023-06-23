@@ -130,7 +130,9 @@ func Execute(stack *[]*Opcode) error {
 
 		err := executeOpcode(&program)
 		if err != nil {
-			return err
+			opcode := program.Opcodes[*program.codePointer-1]
+
+			return errors.New(opcode.Position + ": " + err.Error())
 		}
 	}
 
@@ -353,7 +355,7 @@ func executeOpcode(program *Program) error {
 			}
 			if a, ok := val.value.(int); ok {
 				if b, ok := valEnd.value.(int); ok {
-					if a==b {
+					if a == b {
 						if label, ok := opcode.Arguments[1].(string); ok {
 							*program.codePointer, err = findLabel(program, label)
 							if err != nil {

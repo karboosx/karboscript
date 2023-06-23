@@ -14,6 +14,8 @@ type Code struct {
 }
 
 type Function struct {
+	Pos lexer.Position
+
 	Name       string       `"function" @Ident "("`
 	Arguments  []*Argument  ` [@@ ("," @@)*] ")"`
 	ReturnType *VarType     `@@?`
@@ -21,6 +23,8 @@ type Function struct {
 }
 
 type Statement struct {
+	Pos lexer.Position
+
 	If           *If           `(@@ `
 	For          *For          `| @@ `
 	ForInc       *ForInc       `| @@ `
@@ -35,30 +39,42 @@ type VarType struct {
 }
 
 type Assigment struct {
+	Pos lexer.Position
+
 	VarType    VarType    `@@?`
 	Variable   Variable   `@@`
 	Expression Expression `"=" @@`
 }
 
 type ReturnStmt struct {
+	Pos lexer.Position
+
 	Expression Expression `"return" @@`
 }
 
 type FunctionCall struct {
+	Pos lexer.Position
+
 	FunctionName string        `@Ident "("`
 	Arguments    []*Expression ` [@@ ("," @@)*] ")"`
 }
 
 type If struct {
+	Pos lexer.Position
+
 	Condition Expression   `"if" @@`
 	Body      []*Statement `"{" @@* "}"`
 }
 
 type While struct {
+	Pos lexer.Position
+
 	Condition Expression   `"while" @@`
 	Body      []*Statement `"{" @@* "}"`
 }
 type For struct {
+	Pos lexer.Position
+
 	Init      Statement    `"for" "("? @@`
 	Condition Expression   `@@ ";"`
 	Increment Statement    `@@ ")"?`
@@ -66,6 +82,8 @@ type For struct {
 }
 
 type ForInc struct {
+	Pos lexer.Position
+
 	ExpressionA Expression   `"from" @@`
 	ExpressionB Expression   `"to" @@`
 	Variable    Variable     `"as" @@`
@@ -73,11 +91,15 @@ type ForInc struct {
 }
 
 type Argument struct {
+	Pos lexer.Position
+
 	VarType  VarType  `@@`
 	Variable Variable `@@`
 }
 
 type Value struct {
+	Pos lexer.Position
+
 	Integer *Integer `@@`
 	Float   *Float   `| @@`
 	Boolean *Boolean `| @@`
@@ -85,26 +107,38 @@ type Value struct {
 }
 
 type String struct {
+	Pos lexer.Position
+
 	Value string `@String`
 }
 
 type Integer struct {
+	Pos lexer.Position
+
 	Value int `@Int`
 }
 
 type Float struct {
+	Pos lexer.Position
+
 	Value float64 `@Float`
 }
 
 type Boolean struct {
+	Pos lexer.Position
+
 	Value string `@("true"|"false")`
 }
 
 type Variable struct {
+	Pos lexer.Position
+
 	Value string `@Ident`
 }
 
 type Factor struct {
+	Pos lexer.Position
+
 	FunctionCall  *FunctionCall `(@@`
 	Value         *Value        `| @@`
 	Subexpression *Expression   `| "(" @@ ")"`
@@ -112,31 +146,43 @@ type Factor struct {
 }
 
 type OpFactor struct {
+	Pos lexer.Position
+
 	Operator string  `@("*" | "/")`
 	Factor   *Factor `@@`
 }
 
 type Term struct {
+	Pos lexer.Position
+
 	Left  *Factor     `@@`
 	Right []*OpFactor `@@*`
 }
 
 type OpTerm struct {
+	Pos lexer.Position
+
 	Operator string `@("+" | "-")`
 	Term     *Term  `@@`
 }
 
 type ComTerm struct {
+	Pos lexer.Position
+
 	Left  *Term     `@@`
 	Right []*OpTerm `@@*`
 }
 
 type OpComTerm struct {
+	Pos lexer.Position
+
 	Operator string   `@("=""=" | "!""=" | ">" | "<" | ">""=" | "<""=")`
 	Term     *ComTerm `@@`
 }
 
 type Expression struct {
+	Pos lexer.Position
+
 	Left  *ComTerm     `@@`
 	Right []*OpComTerm `@@*`
 }

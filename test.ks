@@ -5,7 +5,7 @@ int b = 1;
 while (a < 5) {
 b = 1;
 while (b < 5) {
-out ("test", b);
+out ("test", e);
 b=b+1;
 }
 

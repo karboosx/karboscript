@@ -14,6 +14,7 @@ type Opcode struct {
 	Operation string
 	Arguments []any
 	Label     *string
+	Position  string
 }
 
 type ParseError struct {
@@ -37,7 +38,7 @@ func (parsed *ParsedCode) append(opcode *Opcode) {
 func parseFunctionBody(parsed *ParsedCode, function *Function) error {
 	parseBody(parsed, function.Body)
 	if (*(*parsed).stack)[len(*(*parsed).stack)-1].Operation != "function_return" {
-		parsed.append(&Opcode{"function_return", []any{}, nil})
+		parsed.append(&Opcode{"function_return", []any{}, nil, function.Pos.String()})
 	}
 	return nil
 }
@@ -79,56 +80,56 @@ func parseStatement(parsed *ParsedCode, statement *Statement) {
 
 func parseWhile(parsed *ParsedCode, while *While) {
 	labelBeforeExpresion := newLabel(parsed, "while")
-	parsed.append(&Opcode{"while_start", []any{}, &labelBeforeExpresion})
+	parsed.append(&Opcode{"while_start", []any{}, &labelBeforeExpresion, while.Pos.String()})
 
 	parseExpresionWithNewScope(parsed, &while.Condition)
 
 	label := newLabel(parsed, "while")
 
-	parsed.append(&Opcode{"while", []any{label}, nil})
+	parsed.append(&Opcode{"while", []any{label}, nil, while.Pos.String()})
 	parseBody(parsed, while.Body)
-	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil})
+	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil, while.Pos.String()})
 
-	parsed.append(&Opcode{"while_else", []any{}, &label})
+	parsed.append(&Opcode{"while_else", []any{}, &label, while.Pos.String()})
 }
 
 func parseFor(parsed *ParsedCode, forStmt *For) {
 	parseStatement(parsed, &forStmt.Init)
 
 	labelBeforeExpresion := newLabel(parsed, "for")
-	parsed.append(&Opcode{"for_start", []any{}, &labelBeforeExpresion})
+	parsed.append(&Opcode{"for_start", []any{}, &labelBeforeExpresion, forStmt.Pos.String()})
 
 	parseExpresionWithNewScope(parsed, &forStmt.Condition)
 
 	label := newLabel(parsed, "for")
 
-	parsed.append(&Opcode{"for", []any{label}, nil})
+	parsed.append(&Opcode{"for", []any{label}, nil, forStmt.Pos.String()})
 	parseBody(parsed, forStmt.Body)
 	parseStatement(parsed, &forStmt.Increment)
 
-	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil})
+	parsed.append(&Opcode{"jmp", []any{labelBeforeExpresion}, nil, forStmt.Pos.String()})
 
-	parsed.append(&Opcode{"for_end", []any{}, &label})
+	parsed.append(&Opcode{"for_end", []any{}, &label, forStmt.Pos.String()})
 }
 
 func parseForInc(parsed *ParsedCode, forStmt *ForInc) {
 	parseExpresionWithNewScope(parsed, &forStmt.ExpressionA)
 
-	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value}, nil})
-	
+	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value}, nil, forStmt.Pos.String()})
+
 	parseExpresionWithNewScope(parsed, &forStmt.ExpressionB)
 
-	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value+"_end"}, nil})
+	parsed.append(&Opcode{"set_local_var_exp", []any{"int", forStmt.Variable.Value + "_end"}, nil, forStmt.Pos.String()})
 
 	incLabelStart := newLabel(parsed, "forinc")
 	incLabelEnd := newLabel(parsed, "forinc_e")
-	parsed.append(&Opcode{"forinc_start", []any{forStmt.Variable.Value, incLabelEnd}, &incLabelStart})
+	parsed.append(&Opcode{"forinc_start", []any{forStmt.Variable.Value, incLabelEnd}, &incLabelStart, forStmt.Pos.String()})
 
 	parseBody(parsed, forStmt.Body)
 
-	parsed.append(&Opcode{"forinc", []any{forStmt.Variable.Value, incLabelStart}, nil})
+	parsed.append(&Opcode{"forinc", []any{forStmt.Variable.Value, incLabelStart}, nil, forStmt.Pos.String()})
 
-	parsed.append(&Opcode{"forinc_end", []any{}, &incLabelEnd})
+	parsed.append(&Opcode{"forinc_end", []any{}, &incLabelEnd, forStmt.Pos.String()})
 }
 
 func newLabel(parsed *ParsedCode, labelType string) string {
@@ -143,53 +144,53 @@ func parseIf(parsed *ParsedCode, ifStmt *If) {
 	lenStack := len(*(*parsed).stack)
 	label := "_if." + strconv.FormatInt(int64(lenStack), 16)
 
-	parsed.append(&Opcode{"if", []any{label}, nil})
+	parsed.append(&Opcode{"if", []any{label}, nil, ifStmt.Pos.String()})
 	parseBody(parsed, ifStmt.Body)
 
-	parsed.append(&Opcode{"if_else", []any{}, &label})
+	parsed.append(&Opcode{"if_else", []any{}, &label, ifStmt.Pos.String()})
 
 }
 
 func parseAssigment(parsed *ParsedCode, assigment *Assigment) {
 	parseExpresionWithNewScope(parsed, &assigment.Expression)
-	parsed.append(&Opcode{"set_local_var_exp", []any{assigment.VarType.Value, assigment.Variable.Value}, nil})
+	parsed.append(&Opcode{"set_local_var_exp", []any{assigment.VarType.Value, assigment.Variable.Value}, nil, assigment.Pos.String()})
 }
 
 func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {
 	// todo check function declaration before making opcodes (like checking types of called function and numer of arguments)
 	for _, argument := range functionCall.Arguments {
 		parseExpresionWithNewScope(parsed, argument)
-		parsed.append(&Opcode{"push_function_arg", []any{}, nil})
+		parsed.append(&Opcode{"push_function_arg", []any{}, nil, functionCall.Pos.String()})
 	}
 
 	if function, ok := parsed.functions[functionCall.FunctionName]; ok {
 		if function.ReturnType != nil {
-			parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments), function.ReturnType.Value}, nil})
-			return;
+			parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments), function.ReturnType.Value}, nil, functionCall.Pos.String()})
+			return
 		} else {
-			parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
-			return;
+			parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil, functionCall.Pos.String()})
+			return
 		}
 	}
-	
+
 	if _, ok := buildInFunctions[functionCall.FunctionName]; ok {
-		parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil})
-		
-	}else {
+		parsed.append(&Opcode{"call_function", []any{functionCall.FunctionName, len(functionCall.Arguments)}, nil, functionCall.Pos.String()})
+
+	} else {
 		parsed.parsedError = errors.New("Can't find " + functionCall.FunctionName + " function!")
 	}
 }
 
 func parseReturnStmt(parsed *ParsedCode, returnStmt *ReturnStmt) {
 	parseExpresionWithNewScope(parsed, &returnStmt.Expression)
-	parsed.append(&Opcode{"push_bellow", []any{}, nil})
-	parsed.append(&Opcode{"function_return", []any{}, nil})
+	parsed.append(&Opcode{"push_bellow", []any{}, nil, returnStmt.Pos.String()})
+	parsed.append(&Opcode{"function_return", []any{}, nil, returnStmt.Pos.String()})
 }
 
 func parseExpresionWithNewScope(parsed *ParsedCode, expression *Expression) {
-	parsed.append(&Opcode{"add_scope", []any{}, nil})
+	parsed.append(&Opcode{"add_scope", []any{}, nil, expression.Pos.GoString()})
 	parseExpresion(parsed, expression)
-	parsed.append(&Opcode{"sub_scope", []any{}, nil})
+	parsed.append(&Opcode{"sub_scope", []any{}, nil, expression.Pos.GoString()})
 }
 
 func parseExpresion(parsed *ParsedCode, expression *Expression) {
@@ -200,7 +201,7 @@ func parseExpresion(parsed *ParsedCode, expression *Expression) {
 func parseRightComExpresion(parsed *ParsedCode, opComTerm []*OpComTerm) {
 	for _, opTerm := range opComTerm {
 		parseComTerm(parsed, opTerm.Term)
-		parsed.append(&Opcode{"exp_call", []any{opTerm.Operator}, nil})
+		parsed.append(&Opcode{"exp_call", []any{opTerm.Operator}, nil, opTerm.Pos.String()})
 	}
 }
 
@@ -216,7 +217,7 @@ func parseRightTerm(parsed *ParsedCode, opTerm []*OpTerm) {
 func parseOpTerm(parsed *ParsedCode, opTerms []*OpTerm) {
 	for _, opTerm := range opTerms {
 		parseTerm(parsed, opTerm.Term)
-		parsed.append(&Opcode{"exp_call", []any{opTerm.Operator}, nil})
+		parsed.append(&Opcode{"exp_call", []any{opTerm.Operator}, nil, opTerm.Pos.String()})
 	}
 }
 
@@ -232,28 +233,28 @@ func parseTerm(parsed *ParsedCode, term *Term) {
 func parseOpFactor(parsed *ParsedCode, opFactors []*OpFactor) {
 	for _, opFactor := range opFactors {
 		parseFactor(parsed, opFactor.Factor)
-		parsed.append(&Opcode{"exp_call", []any{opFactor.Operator}, nil})
+		parsed.append(&Opcode{"exp_call", []any{opFactor.Operator}, nil, opFactor.Pos.String()})
 	}
 }
 
 func parseFactor(parsed *ParsedCode, factor *Factor) {
 	if factor.Value != nil {
 		if factor.Value.Float != nil {
-			parsed.append(&Opcode{"push_exp", []any{factor.Value.Float.Value}, nil})
+			parsed.append(&Opcode{"push_exp", []any{factor.Value.Float.Value}, nil, factor.Pos.String()})
 		} else if factor.Value.Integer != nil {
-			parsed.append(&Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil})
+			parsed.append(&Opcode{"push_exp", []any{factor.Value.Integer.Value}, nil, factor.Pos.String()})
 		} else if factor.Value.String != nil {
 			stripSlash := strings.ReplaceAll(factor.Value.String.Value, "\\\"", "\"")
-			parsed.append(&Opcode{"push_exp", []any{stripSlash[1 : len(stripSlash)-1]}, nil})
+			parsed.append(&Opcode{"push_exp", []any{stripSlash[1 : len(stripSlash)-1]}, nil, factor.Pos.String()})
 		} else if factor.Value.Boolean != nil {
-			parsed.append(&Opcode{"push_exp", []any{factor.Value.Boolean.Value}, nil})
+			parsed.append(&Opcode{"push_exp", []any{factor.Value.Boolean.Value}, nil, factor.Pos.String()})
 		}
 	}
 	if factor.FunctionCall != nil {
 		parseFunctionCall(parsed, factor.FunctionCall)
 	}
 	if factor.Variable != nil {
-		parsed.append(&Opcode{"push_exp_var", []any{factor.Variable.Value}, nil})
+		parsed.append(&Opcode{"push_exp_var", []any{factor.Variable.Value}, nil, factor.Pos.String()})
 	}
 	if factor.Subexpression != nil {
 		parseExpresion(parsed, factor.Subexpression)
@@ -269,10 +270,10 @@ func parseFunction(parsed *ParsedCode, function *Function) error {
 		}
 	}
 
-	*(*parsed).stack = append(*(*parsed).stack, &Opcode{"function", []any{}, &label})
+	*(*parsed).stack = append(*(*parsed).stack, &Opcode{"function", []any{}, &label, function.Pos.String()})
 
 	for _, argument := range function.Arguments {
-		*(*parsed).stack = append(*(*parsed).stack, &Opcode{"set_local_var_arg", []any{argument.VarType.Value, argument.Variable.Value}, nil})
+		*(*parsed).stack = append(*(*parsed).stack, &Opcode{"set_local_var_arg", []any{argument.VarType.Value, argument.Variable.Value}, nil, function.Pos.String()})
 	}
 
 	err := parseFunctionBody(parsed, function)
@@ -302,10 +303,10 @@ func GetOpcodes(code *Code) ([]*Opcode, error) {
 		}
 	}
 
-	if (parsed.parsedError != nil) {
-		return opcodes, parsed.parsedError;
+	if parsed.parsedError != nil {
+		return opcodes, parsed.parsedError
 	}
-	opcodes = append(*parsed.stack, &Opcode{"call_function", []any{"main", 0}, nil}, &Opcode{"exit", []any{"main", 0}, nil})
+	opcodes = append(*parsed.stack, &Opcode{"call_function", []any{"main", 0}, nil, ""}, &Opcode{"exit", []any{"main", 0}, nil, ""})
 
 	return opcodes, nil
 }
