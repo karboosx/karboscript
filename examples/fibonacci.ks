@@ -1,12 +1,12 @@
 function main() {
-    $a = 1;
-    $b = 1;
+    int a = 1;
+    int b = 1;
+    int max = readInt();
+    while (b < max) {
+                out (b);
 
-    while ($b < 500) {
-        
-        $c = $b;
-        $b = $a + $b;
-        $a = $c;
-        out ($b);
+        int c = b;
+        int b = a + b;
+        a = c;
     }
 }
