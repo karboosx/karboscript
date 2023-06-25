@@ -18,7 +18,7 @@ type Program struct {
 	functionArgsStack     []any
 	functionArgumentCount *int
 	scopes                []*Scope
-	lastScope             *Scope
+	lastSubScope          *Scope
 }
 
 type Var struct {
@@ -188,7 +188,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "sub_scope" {
-		program.lastScope = program.subScope()
+		program.lastSubScope = program.subScope()
 
 		return nil
 	}
@@ -236,7 +236,7 @@ func executeOpcode(program *Program) error {
 			}
 
 			varScopePosition := program.getVariableScopePosition(name)
-			varValue, err := program.lastScope.popExp()
+			varValue, err := program.lastSubScope.popExp()
 
 			if err != nil {
 				return err
@@ -260,7 +260,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_bellow" {
-		value, err := program.lastScope.popExp()
+		value, err := program.lastSubScope.popExp()
 		if err != nil {
 			return err
 		}
@@ -287,7 +287,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "if" {
-		lastVal, err := program.lastScope.popExp()
+		lastVal, err := program.lastSubScope.popExp()
 		if err != nil {
 			return err
 		}
@@ -320,7 +320,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "while" || opcode.Operation == "for" {
-		lastVal, err := program.lastScope.popExp()
+		lastVal, err := program.lastSubScope.popExp()
 		if err != nil {
 			return err
 		}
@@ -455,7 +455,7 @@ func executeOpcode(program *Program) error {
 	}
 
 	if opcode.Operation == "push_function_arg" {
-		x, error := (*program).lastScope.popExp()
+		x, error := (*program).lastSubScope.popExp()
 		if error != nil {
 			return error
 		}

@@ -35,13 +35,14 @@ We have to our disposal couple of buildin functions:
 |---------------|-----------|--------|---------|
 | out() | any variable... | nothing | out(1,2,3); |
 | readLine() | nothing | string | name = readLine(); |
+| readInt() | nothing | int | name = readInt(); |
 
 ## Syntax
 
 # Declare function
 
 ```c
-function <name>(<type> <argument_name>, ...) [return_type] {
+function <name>([<type> <argument_name>], ...) [return_type] {
     [body]
 }
 ```

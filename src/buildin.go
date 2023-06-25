@@ -9,8 +9,9 @@ import (
 type buildInFunction func(program *Program) error
 
 var buildInFunctions = map[string]buildInFunction{
-	"out": out,
+	"out":      out,
 	"readLine": readLine,
+	"readInt":  readInt,
 }
 
 func out(program *Program) error {
@@ -25,10 +26,20 @@ func readLine(program *Program) error {
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 
-	if (err != nil) {
-		return nil;
+	if err != nil {
+		return nil
 	}
 
 	program.getScope(0).pushExp(text)
+	return nil
+}
+
+func readInt(program *Program) error {
+	getFunctionArguments(program)
+	var out int
+
+	fmt.Scanf("%d", &out)
+
+	program.getScope(0).pushExp(out)
 	return nil
 }
