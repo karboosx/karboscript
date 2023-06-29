@@ -183,6 +183,14 @@ func executeOpcode(program *Program) error {
 		return nil
 	}
 
+	if opcode.Operation == "push_last_exp" {
+		x, error := (*program).lastSubScope.popExp()
+		if error != nil {
+			return error
+		}
+		program.getScope(0).pushExp(x)
+	}
+
 	if opcode.Operation == "push_empty_arr" {
 		program.getScope(0).pushExp([]any{})
 		return nil
@@ -305,6 +313,48 @@ func executeOpcode(program *Program) error {
 				program.getScope(varScopePosition).variable[name] = &variable
 			} else {
 				program.getScope(0).variable[name] = &variable
+			}
+		}
+
+		return nil
+	}
+
+	if opcode.Operation == "set_array_var_exp" {
+
+		if name, ok := opcode.Arguments[0].(string); ok {
+
+			variableForType := program.getVariable(name)
+
+			if variableForType == nil {
+				return errors.New("Undeclared variable: " + name)
+			}
+
+			expression, err := program.getScope(0).popExp()
+
+			if err != nil {
+				return err
+			}
+
+			index, err := program.getScope(0).popExp()
+
+			if err != nil {
+				return err
+			}
+
+			variable := program.getVariable(name)
+
+			if variable, err := variable.value.([]any); err {
+				if index, ok := index.(int); ok {
+					if index >= len(variable) {
+						return errors.New("Index out of range!")
+					}
+
+					variable[index] = expression
+				} else {
+					return errors.New("Index is not integer!")
+				}
+			} else {
+				return errors.New("variable is not array!")
 			}
 		}
 

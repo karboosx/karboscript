@@ -1,5 +1,1 @@
-function main() {
-    array a = [1];
-    array b = [2];
-    out(a[0]);
-}
+function main() {    int[] a = [1,2,3];    a[1] = 5;    out(a[1]);}

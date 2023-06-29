@@ -181,3 +181,29 @@ func ExampleForIncTest() {
 	// 8
 	// 9
 }
+
+func ExampleTestArrayAssign() {
+	ast, err := karboscript.ParseString("function main() {    array a = [1,2,3];    a[1] = 5;    out(a[1]);}")
+
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 5
+}
+
+func ExampleTestArrayAssign2() {
+	ast, err := karboscript.ParseString("function main() {    array a = [1,2,3]; array b = [4,5,6];    a[1] = b[1];    out(a[1]);}")
+
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 5
+}

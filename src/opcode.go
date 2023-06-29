@@ -64,6 +64,9 @@ func parseStatement(parsed *ParsedCode, statement *Statement) {
 	if statement.Assigment != nil {
 		parseAssigment(parsed, statement.Assigment)
 	}
+	if statement.ArrayAssigment != nil {
+		parseArrayAssigment(parsed, statement.ArrayAssigment)
+	}
 	if statement.If != nil {
 		parseIf(parsed, statement.If)
 	}
@@ -154,6 +157,14 @@ func parseIf(parsed *ParsedCode, ifStmt *If) {
 func parseAssigment(parsed *ParsedCode, assigment *Assigment) {
 	parseExpresionWithNewScope(parsed, &assigment.Expression)
 	parsed.append(&Opcode{"set_local_var_exp", []any{assigment.VarType.Value, assigment.Variable.Value}, nil, assigment.Pos.String()})
+}
+
+func parseArrayAssigment(parsed *ParsedCode, assigment *ArrayAssigment) {
+	parseExpresionWithNewScope(parsed, &assigment.Index)
+	parsed.append(&Opcode{"push_last_exp", []any{}, nil, assigment.Pos.GoString()})
+	parseExpresionWithNewScope(parsed, &assigment.Expression)
+	parsed.append(&Opcode{"push_last_exp", []any{}, nil, assigment.Pos.GoString()})
+	parsed.append(&Opcode{"set_array_var_exp", []any{assigment.Variable.Value}, nil, assigment.Pos.String()})
 }
 
 func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {

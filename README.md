@@ -184,3 +184,21 @@ function test() string {
     return "test";
 }
 ```
+
+Array declaration
+```c
+function main() {
+    array a = [1, 2, 3, 4, 5];
+    out(a[0]);
+}
+```
+
+Array assignment
+```c
+function main() {
+    array a = [1, 2, 3, 4, 5];
+    a[0] = 10;
+    out(a[0]);
+}
+```
+

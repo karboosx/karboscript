@@ -25,15 +25,17 @@ type Function struct {
 type Statement struct {
 	Pos lexer.Position
 
-	If           *If           `(@@ `
-	For          *For          `| @@ `
-	ForInc       *ForInc       `| @@ `
-	While        *While        `| @@ ) | `
-	ReturnStmt   *ReturnStmt   `( @@ `
-	Assigment    *Assigment    `| @@ `
-	FunctionCall *FunctionCall `| @@`
-	Expression   *Expression   `| @@) ";"`
+	If                *If                `(@@ `
+	For               *For               `| @@ `
+	ForInc            *ForInc            `| @@ `
+	While             *While             `| @@ ) | `
+	ReturnStmt        *ReturnStmt        `( @@ `
+	ArrayAssigment    *ArrayAssigment    `| @@ `
+	Assigment         *Assigment         `| @@ `
+	FunctionCall      *FunctionCall      `| @@`
+	Expression        *Expression        `| @@) ";"`
 }
+
 type VarType struct {
 	Value string `@("array" | "string" | "int" | "float" | "bool")`
 }
@@ -43,6 +45,14 @@ type Assigment struct {
 
 	VarType    VarType    `@@?`
 	Variable   Variable   `@@`
+	Expression Expression `"=" @@`
+}
+
+type ArrayAssigment struct {
+	Pos lexer.Position
+
+	Variable   Variable   `@@ "["`
+	Index      Expression `@@ "]"`
 	Expression Expression `"=" @@`
 }
 
