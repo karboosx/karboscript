@@ -53,6 +53,21 @@ function <name>([<type> <argument_name>], ...) [return_type] {
 ```
 For example: `string test = "hello world";`
 
+# Array
+```c
+array <var_name> = [<expression>, ...];
+```
+
+Access array element
+```c
+<array_name>[<index>]
+```
+
+Assign array element
+```c
+<array_name>[<index>] = <expression>;
+```
+
 # Call function
 ```c
 <function_name>(<argument>, ...);
@@ -202,3 +217,67 @@ function main() {
 }
 ```
 
+# Intermediary code
+The code is compiled to intermediary code which is then executed by virtual machine. For example this code:
+```c
+function main() {
+    int a = 1;
+    int b = 1;
+    int max = 500;
+    while (b < max) {
+        out (b);
+
+        int c = b;
+        int b = a + b;
+        a = c;
+    }
+}
+```
+
+Will be compiled to:
+```
+"_function.main: function"
+"add_scope"
+"push_exp ( 1 )"
+"sub_scope"
+"set_local_var_exp ( int a )"
+"add_scope"
+"push_exp ( 1 )"
+"sub_scope"
+"set_local_var_exp ( int b )"
+"add_scope"
+"push_exp ( 500 )"
+"sub_scope"
+"set_local_var_exp ( int max )"
+"_while.d: while_start"
+"add_scope"
+"push_exp_var ( b )"
+"push_exp_var ( max )"
+"exp_call ( < )"
+"sub_scope"
+"while ( _while.13 )"
+"add_scope"
+"push_exp_var ( b )"
+"sub_scope"
+"push_function_arg"
+"call_function ( out 1 )"
+"add_scope"
+"push_exp_var ( b )"
+"sub_scope"
+"set_local_var_exp ( int c )"
+"add_scope"
+"push_exp_var ( a )"
+"push_exp_var ( b )"
+"exp_call ( + )"
+"sub_scope"
+"set_local_var_exp ( int b )"
+"add_scope"
+"push_exp_var ( c )"
+"sub_scope"
+"set_local_var_exp (  a )"
+"jmp ( _while.d )"
+"_while.13: while_else"
+"function_return"
+"call_function ( main 0 )"
+"exit ( main 0 )"
+```

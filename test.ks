@@ -1,1 +1,12 @@
-function main() {    int[] a = [1,2,3];    a[1] = 5;    out(a[1]);}
+function main() {
+    int a = 1;
+    int b = 1;
+    int max = 500;
+    while (b < max) {
+        out (b);
+
+        int c = b;
+        int b = a + b;
+        a = c;
+    }
+}
