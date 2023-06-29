@@ -171,6 +171,7 @@ func executeOpcode(program *Program) error {
 		program.getScope(0).pushExp(opcode.Arguments[0])
 		return nil
 	}
+
 	if opcode.Operation == "push_exp_var" {
 		if name, ok := opcode.Arguments[0].(string); ok {
 			x := program.getVariable(name)
@@ -180,6 +181,57 @@ func executeOpcode(program *Program) error {
 			program.getScope(0).pushExp(x.value)
 		}
 		return nil
+	}
+
+	if opcode.Operation == "push_empty_arr" {
+		program.getScope(0).pushExp([]any{})
+		return nil
+	}
+
+	if opcode.Operation == "push_arr_exp" {
+		newElement, error := (*program).lastSubScope.popExp()
+		if error != nil {
+			return error
+		}
+
+		arr, err1 := program.getScope(0).popExp()
+		if err1 != nil {
+			return err1
+		}
+
+		if arrayToAdd, ok := arr.([]any); ok {
+			program.getScope(0).pushExp(append(arrayToAdd, newElement))
+
+			return nil
+		} else {
+			return errors.New("variable is not array!")
+		}
+	}
+
+	if opcode.Operation == "push_arr_call" {
+		index, error := (*program).lastSubScope.popExp()
+		if error != nil {
+			return error
+		}
+
+		arr := program.getVariable(opcode.Arguments[0].(string))
+		if arr == nil {
+			return errors.New("Undeclared variable: " + opcode.Arguments[0].(string))
+		}
+
+		if array, ok := arr.value.([]any); ok {
+			if index, ok := index.(int); ok {
+				if index >= len(array) {
+					return errors.New("Index out of range!")
+				}
+
+				program.getScope(0).pushExp(array[index])
+			} else {
+				return errors.New("Index is not integer!")
+			}
+		} else {
+			return errors.New("variable is not array!")
+		}
 	}
 
 	if opcode.Operation == "add_scope" {
@@ -508,6 +560,13 @@ func validateReturnType(newCodePointer Call, value any) (error, bool) {
 			return errors.New("return value is not float!"), false
 		}
 	}
+	if newCodePointer.returnType.Value == "array" {
+		if _, ok := value.([]any); ok {
+			return nil, true
+		} else {
+			return errors.New("return value is not array!"), false
+		}
+	}
 
 	return errors.New("cant validate return value!"), false
 }
@@ -539,6 +598,13 @@ func validateVariable(variable Var) (error, bool) {
 			return nil, true
 		} else {
 			return errors.New("variable is not float!"), false
+		}
+	}
+	if variable.varType.Value == "array" {
+		if _, ok := variable.value.([]any); ok {
+			return nil, true
+		} else {
+			return errors.New("variable is not array!"), false
 		}
 	}
 

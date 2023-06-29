@@ -259,6 +259,27 @@ func parseFactor(parsed *ParsedCode, factor *Factor) {
 	if factor.Subexpression != nil {
 		parseExpresion(parsed, factor.Subexpression)
 	}
+	if factor.ArrayCall != nil {
+		parseArrayCall(parsed, factor.ArrayCall)
+	}
+	if factor.ArrayLiteral != nil {
+		parseArrayLiteral(parsed, factor.ArrayLiteral)
+	}
+}
+
+func parseArrayLiteral(parsed *ParsedCode, arrayLiteral *ArrayLiteral) {
+	parsed.append(&Opcode{"push_empty_arr", []any{}, nil, arrayLiteral.Pos.String()})
+
+	for _, element := range arrayLiteral.Elements {
+		parseExpresionWithNewScope(parsed, element)
+		parsed.append(&Opcode{"push_arr_exp", []any{}, nil, arrayLiteral.Pos.String()})
+	}
+}
+
+func parseArrayCall(parsed *ParsedCode, arrayCall *ArrayCall) {
+	parseExpresionWithNewScope(parsed, arrayCall.Index)
+	parsed.append(&Opcode{"push_arr_call", []any{arrayCall.Name}, nil, arrayCall.Pos.String()})
+
 }
 
 func parseFunction(parsed *ParsedCode, function *Function) error {

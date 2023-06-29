@@ -35,7 +35,7 @@ type Statement struct {
 	Expression   *Expression   `| @@) ";"`
 }
 type VarType struct {
-	Value string `@("string"| "int" | "float" | "bool")`
+	Value string `@("array" | "string" | "int" | "float" | "bool")`
 }
 
 type Assigment struct {
@@ -136,13 +136,28 @@ type Variable struct {
 	Value string `@Ident`
 }
 
+type ArrayCall struct {
+	Pos lexer.Position
+
+	Name  string      `@Ident "["`
+	Index *Expression `@@ "]"`
+}
+
+type ArrayLiteral struct {
+	Pos lexer.Position
+
+	Elements []*Expression `"[" [@@ ("," @@)*] "]"`
+}
+
 type Factor struct {
 	Pos lexer.Position
 
-	FunctionCall  *FunctionCall `(@@`
+	ArrayCall     *ArrayCall    `(@@`
+	FunctionCall  *FunctionCall `| @@`
 	Value         *Value        `| @@`
 	Subexpression *Expression   `| "(" @@ ")"`
-	Variable      *Variable     `| @@)`
+	Variable      *Variable     `| @@`
+	ArrayLiteral  *ArrayLiteral `| @@)`
 }
 
 type OpFactor struct {
