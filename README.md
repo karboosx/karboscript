@@ -68,6 +68,11 @@ Assign array element
 <array_name>[<index>] = <expression>;
 ```
 
+Push new element to array
+```c
+<array_name>[] = <expression>;
+```
+
 # Call function
 ```c
 <function_name>(<argument>, ...);

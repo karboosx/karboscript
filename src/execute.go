@@ -216,6 +216,41 @@ func executeOpcode(program *Program) error {
 		}
 	}
 
+	if opcode.Operation == "add_arr_exp" {
+		newElement, error := (*program).lastSubScope.popExp()
+		if error != nil {
+			return error
+		}
+
+		if name, ok := opcode.Arguments[0].(string); ok {
+			x := program.getVariable(name)
+			if x == nil {
+				return errors.New("Undeclared variable: " + name)
+			}
+			
+			if arrayToAdd, ok := x.value.([]any); ok {
+				x.value = append(arrayToAdd, newElement)
+				return nil
+			} else {
+				return errors.New("variable is not array!")
+			}
+		}
+		return nil
+
+		arr, err1 := program.getScope(0).popExp()
+		if err1 != nil {
+			return err1
+		}
+
+		if arrayToAdd, ok := arr.([]any); ok {
+			program.getScope(0).pushExp(append(arrayToAdd, newElement))
+
+			return nil
+		} else {
+			return errors.New("variable is not array!")
+		}
+	}
+
 	if opcode.Operation == "push_arr_call" {
 		index, error := (*program).lastSubScope.popExp()
 		if error != nil {

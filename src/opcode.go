@@ -160,11 +160,16 @@ func parseAssigment(parsed *ParsedCode, assigment *Assigment) {
 }
 
 func parseArrayAssigment(parsed *ParsedCode, assigment *ArrayAssigment) {
-	parseExpresionWithNewScope(parsed, &assigment.Index)
-	parsed.append(&Opcode{"push_last_exp", []any{}, nil, assigment.Pos.GoString()})
-	parseExpresionWithNewScope(parsed, &assigment.Expression)
-	parsed.append(&Opcode{"push_last_exp", []any{}, nil, assigment.Pos.GoString()})
-	parsed.append(&Opcode{"set_array_var_exp", []any{assigment.Variable.Value}, nil, assigment.Pos.String()})
+	if assigment.Index != nil {
+		parseExpresionWithNewScope(parsed, assigment.Index)
+		parsed.append(&Opcode{"push_last_exp", []any{}, nil, assigment.Pos.GoString()})
+		parseExpresionWithNewScope(parsed, &assigment.Expression)
+		parsed.append(&Opcode{"push_last_exp", []any{}, nil, assigment.Pos.GoString()})
+		parsed.append(&Opcode{"set_array_var_exp", []any{assigment.Variable.Value}, nil, assigment.Pos.String()})
+	} else {
+		parseExpresionWithNewScope(parsed, &assigment.Expression)
+		parsed.append(&Opcode{"add_arr_exp", []any{assigment.Variable.Value}, nil, assigment.Pos.String()})
+	}
 }
 
 func parseFunctionCall(parsed *ParsedCode, functionCall *FunctionCall) {

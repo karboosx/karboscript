@@ -207,3 +207,16 @@ func ExampleTestArrayAssign2() {
 	// Output:
 	// 5
 }
+
+func ExampleTestArrayPush() {
+	ast, err := karboscript.ParseString("function main() {    array a = [1,2,3]; a[] = 20;    out(a[3]);}")
+
+	if err != nil {
+	}
+
+	opcodes, _ := karboscript.GetOpcodes(ast)
+	_ = karboscript.Execute(&opcodes)
+
+	// Output:
+	// 20
+}

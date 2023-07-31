@@ -1,12 +1,5 @@
-function main() {
-    int a = 1;
-    int b = 1;
-    int max = 500;
-    while (b < max) {
-        out (b);
-
-        int c = b;
-        int b = a + b;
-        a = c;
-    }
+function main() {    
+    array a = [1,2,3]; 
+    a[] = 20;    
+    out(a[3]);
 }
